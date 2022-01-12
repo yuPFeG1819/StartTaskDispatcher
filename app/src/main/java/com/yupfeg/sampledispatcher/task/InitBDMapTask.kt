@@ -23,6 +23,6 @@ class InitBDMapTask : Task() {
 
     override fun run() {
         logd("InitBDMapTask run")
-        Thread.sleep(300)
+        Thread.sleep(200)
     }
 }

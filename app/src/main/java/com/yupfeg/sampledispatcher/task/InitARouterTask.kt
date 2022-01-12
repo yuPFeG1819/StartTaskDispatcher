@@ -22,7 +22,7 @@ class InitARouterTask : Task(){
 
     override fun run() {
         logd("InitARouterTask run")
-        Thread.sleep(100)
+        Thread.sleep(50)
     }
 
 }

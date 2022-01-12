@@ -23,6 +23,6 @@ class InitBuglyTask : Task(){
 
     override fun run() {
         logd("InitBuglyTask run")
-        Thread.sleep(200)
+        Thread.sleep(100)
     }
 }
