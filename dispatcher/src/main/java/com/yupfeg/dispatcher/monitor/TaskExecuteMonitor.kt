@@ -65,9 +65,11 @@ internal class TaskExecuteMonitor(
 
     /**
      * 记录任务的运行消耗时间
+     * - 注意线程安全问题
      * @param tag 任务的唯一标识
      * @param runTime 任务运行时间(ms)
      * */
+    @Synchronized
     fun recordTaskCostTime(tag : String,runTime : Long){
         mTaskExecuteCostTimeMap[tag] = runTime
     }
@@ -130,7 +132,7 @@ internal class TaskExecuteMonitor(
             allTaskCostMap = mTaskExecuteCostTimeMap
         )
         mHandler.post {
-            onRecordListener?.onMonitorRecordResult(recordInfo)
+            onRecordListener?.onAllTaskRecordResult(recordInfo)
         }
     }
 
