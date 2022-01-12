@@ -16,25 +16,29 @@ internal class TaskWrapper @JvmOverloads constructor(
 
     override fun run() {
         Process.setThreadPriority(originTask.taskPriority())
-        //等待前置任务完成
         originTask.onTaskWait(originTask.tag)
-        val startTime = SystemClock.elapsedRealtime()
-        originTask.awaitDependsTask()
-        val waitTime = SystemClock.elapsedRealtime() - startTime
+        val waitTime = measureTime{
+            //等待前置任务完成
+            originTask.awaitDependsTask()
+        }
         originTask.onTaskStart(originTask.tag,waitTime)
-
-        //执行当前任务
-        val taskStartTime = SystemClock.elapsedRealtime()
-        originTask.run()
-        val runTime = SystemClock.elapsedRealtime() - taskStartTime
-
-        //记录执行时间
+        val runTime = measureTime {
+            //执行当前任务
+            originTask.run()
+        }
+        //记录任务执行时间
         recordTaskRunningInfo(waitTime, runTime)
         dispatcher?.apply {
             taskExecuteMonitor.recordTaskCostTime(originTask.tag,runTime)
             //通知后续任务可以执行
-            dispatcher.markTaskOverDone(originTask)
+            markTaskOverDone(originTask)
         }
+    }
+
+    private inline fun measureTime(block : ()->Unit) : Long{
+        val startTime = SystemClock.elapsedRealtime()
+        block()
+        return SystemClock.elapsedRealtime() - startTime
     }
 
     /**

@@ -39,9 +39,10 @@ internal object TaskSortTools {
         isUpPriorityTask = false
         //缓存需要被依赖的任务类型，作为优先执行任务
         val dependsSet = HashSet<String>()
-        //进行拓扑排序
+        //拓扑排序
         val sortedTasks = topologicalSortList(origins,dependsSet,nodeTaskDependMap)
         if (isUpPriorityTask && dependsSet.isNotEmpty()) {
+            //提高特殊任务优先级
             return getUpPriorityTasks(sortedTasks, dependsSet)
         }
         return sortedTasks
@@ -68,20 +69,20 @@ internal object TaskSortTools {
         val queue : Queue<Task> = ArrayDeque()
         val nodeInDegreeMap = HashMap<String,Int>()
 
+        //0. 建立依赖关系哈希表
+        collectTaskDepends(origins,dependsSet,nodeTaskDependMap)
         //1. 遍历找到所有入度为0的任务,并放入到任务队列
         findTopNodeTask(origins, queue, nodeInDegreeMap)
-        //2. 建立依赖关系哈希表
-        collectTaskDepends(origins,dependsSet,nodeTaskDependMap)
-        //3. 开始BFS算法遍历入度为0的任务队列进行排序
+        //2. 开始BFS算法遍历入度为0的任务队列进行排序
         while (queue.isNotEmpty()){
             val nodeTask = queue.poll() ?: break
             newTasks.add(nodeTask)
-            //4. 在该任务执行完后，遍历该任务的所有子节点任务（出度不为0）
+            //3. 在该任务执行完后，遍历该任务的所有子节点任务（出度不为0）
             val childTasks = nodeTaskDependMap[nodeTask.tag]
             if (childTasks.isNullOrEmpty()) continue
             for (childTask in childTasks){
                 var nodeInDegree = nodeInDegreeMap[childTask.tag]?:0
-                //5. 依赖的任务已结束，则该子任务的入度-1，如果该节点入度为0，则放入到任务队列等待执行
+                //4. 依赖的任务已结束，则该子任务的入度-1，如果该节点入度为0，则放入到任务队列等待执行
                 nodeInDegree--
                 nodeInDegreeMap[childTask.tag] = nodeInDegree
                 if (nodeInDegree == 0){
@@ -90,7 +91,7 @@ internal object TaskSortTools {
             }
         }
 
-        //6. 所有入度为0的节点执行完后，校验是否节点有环，如果节点数量不相等表示任务列表不是有向无环图，抛出异常
+        //5. 所有入度为0的节点执行完后，校验是否节点有环，如果节点数量不相等表示任务列表不是有向无环图，抛出异常
         check(newTasks.size == origins.size){
             "task list exist circle,check task depends ;\n input size ${origins.size} : $origins" +
                     "\n result size ${newTasks.size} : $newTasks "
@@ -156,10 +157,6 @@ internal object TaskSortTools {
                 dependsSet.add(taskTag)
             }
         }
-    }
-
-    private fun checkDependsTaskValidity(){
-
     }
 
     /**

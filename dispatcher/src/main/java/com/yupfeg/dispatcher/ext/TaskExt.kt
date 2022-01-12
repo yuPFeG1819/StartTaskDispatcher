@@ -85,9 +85,7 @@ fun anchorTask(tag: String,dependsOnList : List<String>) : Task{
     return object : Task(){
 
         init {
-            for (dependTag in dependsOnList) {
-                addDependsOnTaskTag(dependTag)
-            }
+            addDependsOnList(dependsOnList)
         }
 
         override val tag: String = tag
