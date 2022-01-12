@@ -51,6 +51,7 @@ class DelayTaskDispatcher private constructor(builder : Builder) {
 
     /**
      * 延迟任务调度器构筑器
+     * - 不允许添加依赖任务，延迟任务只是在主线程空闲时执行
      * */
     class Builder(private val context: Context){
 
@@ -85,7 +86,7 @@ class DelayTaskDispatcher private constructor(builder : Builder) {
         @MainThread
         fun builder() : DelayTaskDispatcher{
             for (task in taskQueue) {
-                task.setStatusListener(mTaskExecuteListener)
+                task.setTaskStateListener(mTaskExecuteListener)
             }
             return DelayTaskDispatcher(this)
         }
