@@ -15,9 +15,6 @@
 - 提供`IdleHanler`延迟任务调度器，便于统一管理延迟任务
 
 
-
-
-
 # 简单使用
 
 1. 实现抽象类`Task`，设置任务唯一标识与具体执行的任务。
@@ -37,7 +34,7 @@
            get() = TAG
        
        override fun run() {
-          	... 	//具体任务
+          	//具体任务
        }
    	
    }
@@ -52,8 +49,8 @@
    ``` kotlin
    fun initBuilder(){
        TaskDispatcherBuilder(context).apply{
-           addTask(...) //添加声明的任务
-           .dependsOn(...) //添加上面任务的前置依赖任务标识
+           addTask("taskName") //添加声明的任务
+           .dependsOn("dependsOnTaskName") //添加上面任务的前置依赖任务标识
        }
    }
    ```
@@ -62,8 +59,16 @@
 
    ``` kotlin
    setOnMonitorRecordListener(object : OnMonitorRecordListener {
+       override val isPrintDependsMap: Boolean
+       	get() = true
+   
+       override fun onTaskSorted(dependsInfo: String) {
+           //在任务排序完成后回调排序信息，只在isDebug = true才会回调
+       }
+    
+   
        override fun onMonitorRecordResult(timeInfo: ExecuteRecordInfo) {
-         	...	//所有任务执行信息
+         	//所有任务执行信息
        }
    })
    ```
@@ -72,22 +77,12 @@
 
    ``` kotlin
    setOnDispatcherStateListener(object : OnDispatcherStateListener {
-   
-       override val isPrintDependsMap: Boolean
-       	get() = true
-   
-       override fun onTaskSorted(dependsInfo: String) {
-           ... //
-       }
-   
        override fun onStartBefore() {
            //Head Task
-           ...
        }
    
        override fun onFinish() {
            //Tail Task 所有任务执行完成后执行
-          	... 
        }
    })
    ```
@@ -99,15 +94,15 @@
    ``` kotlin
    setOnTaskStateListener(object : OnTaskStateListener {
        override fun onTaskWait(tag: String) {
-           logi("$tag 任务开始等待")
+           Log.i("$tag 任务开始等待")
        }
    
        override fun onTaskStart(tag: String, waitTime: Long){
-           logi("$tag 任务开始执行 , 已等待前置任务 $waitTime ms")
+           Log.i("$tag 任务开始执行 , 已等待前置任务 $waitTime ms")
        }
    
        override fun onTaskFinish(runningInfo: TaskRunningInfo) {
-           logi("任务已执行完成 : $runningInfo")
+           Log.i("任务已执行完成 : $runningInfo")
        }
    
    })
@@ -129,11 +124,16 @@
 //构建调度器
 val dispatcher = startUp(this) {
    //this表示TaskDispatcherBuilder
-   addTask(...){
+   addTask("taskName"){
        //this为MutableList，添加依赖任务标识
-       add(...) //添加前置任务的标识
+       add("anchorTaskTag") //添加前置任务的标识
    }
-   ...
+    
+   //添加快捷添加锚点任务，便于后续任务都依赖该任务，避免所有任务都依赖基础任务 
+    addAnchorTask("anchorTaskTag"){
+        add("otherTaskTag1")
+        add("otherTaskTag2")
+    }
    
    addTask(
        //简易快捷构建主线程任务，不太推荐使用这种方式，尽可能声明启动任务类，便于后续抽取解耦
@@ -142,35 +142,37 @@ val dispatcher = startUp(this) {
     
     //调度器状态监听，按需实现
     setOnDispatcherStateListener {
-        isDebug = true
-        
-        onTaskSorted = {
-            ...
-        }
-        
         onStartBefore = { 
-            ... // Head Task
+            // Head Task
         }
         onFinish = {
-            ... // Tail Task
+            // Tail Task
         }
     }
     //任务执行性能记录监听
     setOnMonitorRecordListener {recordInfo->
-       ...
+        isDebug = true
+
+        onTaskSorted = {tasksInfo->
+            //在任务排序完成后回调排序信息，只在isDebug = true才会回调
+        }
+
+        onAllTaskRecordResult = {timeInfo->
+            //所有任务结束后，回调任务执行记录信息
+        }
     }
     
     //任务执行状态监听
     setOnTaskStateListener {
         onWait = {tag ->
-           ... //任务开始等待前置任务
+           //任务开始等待前置任务
         }
 
         onStart = {tag,waitTime->
-           ... //任务开始执行
+           //任务开始执行
         }
         onFinished = {runningInfo->
-           ... //任务执行完成
+           //任务执行完成
         }
     }
 }
