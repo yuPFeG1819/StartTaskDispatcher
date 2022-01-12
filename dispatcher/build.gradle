@@ -4,7 +4,7 @@ plugins {
 }
 
 //上传的jitpack仓库group
-group = "com.github.yupfeg"
+group = "com.github.yupfeg1819"
 
 android {
     compileSdk 30
