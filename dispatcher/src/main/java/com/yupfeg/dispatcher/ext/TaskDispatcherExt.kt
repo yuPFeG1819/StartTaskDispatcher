@@ -4,8 +4,7 @@ import android.content.Context
 import com.yupfeg.dispatcher.DefaultDispatcherStateListener
 import com.yupfeg.dispatcher.TaskDispatcher
 import com.yupfeg.dispatcher.TaskDispatcherBuilder
-import com.yupfeg.dispatcher.monitor.ExecuteRecordInfo
-import com.yupfeg.dispatcher.monitor.OnMonitorRecordListener
+import com.yupfeg.dispatcher.monitor.DefaultMonitorRecordListener
 import com.yupfeg.dispatcher.task.DefaultTaskStateListener
 import com.yupfeg.dispatcher.task.Task
 
@@ -62,13 +61,9 @@ fun TaskDispatcherBuilder.addAnchorTask(
  * */
 @Suppress("unused")
 fun TaskDispatcherBuilder.setOnMonitorRecordListener(
-    block : (ExecuteRecordInfo)->Unit
+    block : DefaultMonitorRecordListener.()->Unit
 ) :  TaskDispatcherBuilder{
-    setOnMonitorRecordListener(object : OnMonitorRecordListener{
-        override fun onMonitorRecordResult(timeInfo: ExecuteRecordInfo) {
-            block(timeInfo)
-        }
-    })
+    setOnMonitorRecordListener(DefaultMonitorRecordListener().apply(block))
     return this
 }
 
@@ -85,8 +80,7 @@ fun TaskDispatcherBuilder.setOnMonitorRecordListener(
 fun TaskDispatcherBuilder.setOnDispatcherStateListener(
     init : DefaultDispatcherStateListener.()->Unit
 ) : TaskDispatcherBuilder{
-    val listener = DefaultDispatcherStateListener().apply(init)
-    setOnDispatcherStateListener(listener)
+    setOnDispatcherStateListener(DefaultDispatcherStateListener().apply(init))
     return this
 }
 
@@ -99,8 +93,7 @@ fun TaskDispatcherBuilder.setOnDispatcherStateListener(
 fun TaskDispatcherBuilder.setOnTaskStateListener(
     init : DefaultTaskStateListener.()->Unit
 ) : TaskDispatcherBuilder{
-    val listener = DefaultTaskStateListener().apply(init)
-    setOnTaskStateListener(listener)
+    setOnTaskStateListener(DefaultTaskStateListener().apply(init))
     return this
 }
 

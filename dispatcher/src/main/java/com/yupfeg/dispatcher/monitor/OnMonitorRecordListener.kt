@@ -3,17 +3,67 @@ package com.yupfeg.dispatcher.monitor
 import java.lang.StringBuilder
 
 /**
- * 调度器性能监测回调监听
+ * 调度器性能监控回调监听
  * @author yuPFeG
  * @date 2022/01/08
  */
 interface OnMonitorRecordListener {
+
     /**
-     * 在调度器执行完成后回调所有记录信息
+     * 是否输出排序后的任务集合
+     * */
+    val isPrintSortedList : Boolean
+        get() = false
+
+    /**
+     * 任务排序完成回调
+     * @param tasksInfo 任务集合与依赖关系的遍历信息字符串，用于快捷检查依赖关系
+     * */
+    fun onTaskSorted(tasksInfo : String) = Unit
+
+    /**
+     * 在调度器执行完成后回调所有任务执行记录信息
      * - 在所有任务完成后回调，在主线程执行
      * @param timeInfo 记录信息
      * */
-    fun onMonitorRecordResult(timeInfo: ExecuteRecordInfo)
+    fun onAllTaskRecordResult(timeInfo: ExecuteRecordInfo)
+}
+
+/**
+ * 默认实现的调度器性能监控回调监听
+ * */
+class DefaultMonitorRecordListener : OnMonitorRecordListener{
+
+    /**
+     * 是否处于调试状态
+     * 用于是否遍历输出所有任务的依赖关系，默认为false不会遍历输出依赖关系，提高性能
+     * */
+    @JvmField
+    var isDebug : Boolean = false
+
+    /**
+     * 任务排序完成回调，返回整理后的所有任务与其中依赖关系的字符串
+     * */
+    @JvmField
+    var onTaskSorted : ((String)->Unit)? = null
+
+    override val isPrintSortedList: Boolean
+        get() = isDebug
+
+    /**
+     * 所有任务完成后回调记录信息，在主线程运行
+     */
+    @JvmField
+    var onAllTaskRecordResult : ((ExecuteRecordInfo)->Unit)? = null
+
+    override fun onTaskSorted(tasksInfo: String) {
+        onTaskSorted?.invoke(tasksInfo)
+    }
+
+    override fun onAllTaskRecordResult(timeInfo: ExecuteRecordInfo) {
+        onAllTaskRecordResult?.invoke(timeInfo)
+    }
+
 }
 
 /**

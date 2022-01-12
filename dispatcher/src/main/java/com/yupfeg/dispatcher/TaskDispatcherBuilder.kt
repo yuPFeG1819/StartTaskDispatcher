@@ -177,14 +177,14 @@ class TaskDispatcherBuilder(
      * - 仅在调试时使用
      */
     private fun printDependsTaskInfo() {
-        if (onDispatcherStatusListener?.isPrintDependsMap == false) return
+        if (mOnMonitorRecordListener?.isPrintSortedList == false) return
         if (allTasks.isEmpty() || taskDependsClazzMap.isEmpty()) return
         val stringBuilder = StringBuilder().apply {
             append("task sort list : \n")
             for (task in allTasks){
                 append("task tag : ${task.tag} ,\n")
             }
-            append("dependsTask : \n")
+            append("all dependsOn relation : \n")
             for (taskTag in taskDependsClazzMap.keys) {
                 val tasks = taskDependsClazzMap[taskTag]
                 append(
@@ -192,12 +192,12 @@ class TaskDispatcherBuilder(
                 )
                 if (tasks.isNullOrEmpty()) continue
                 for (task in tasks) {
-                    append("dependent task :  ${task.tag} \n")
+                    append("depend from task :  ${task.tag} \n")
                 }
             }
             this.deleteAt(this.lastIndex)
         }
-        onDispatcherStatusListener?.onTaskSorted(stringBuilder.toString())
+        mOnMonitorRecordListener?.onTaskSorted(stringBuilder.toString())
     }
 
 }
