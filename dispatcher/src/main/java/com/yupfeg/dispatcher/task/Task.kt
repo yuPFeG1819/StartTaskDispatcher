@@ -184,6 +184,7 @@ abstract class Task : ITask, OnTaskStateListener {
 
     /**
      * 添加该任务依赖的前置任务集合
+     * - 只允许在调度器构造类中设置
      * @param list 任务标识集合
      * */
     internal fun addDependsOnList(list : List<String>){
@@ -193,9 +194,11 @@ abstract class Task : ITask, OnTaskStateListener {
     }
 
     /**
-     * 设置执行状态监听
+     * 设置任务执行状态监听
+     * - 只允许由调度器统一配置
+     * @param listener
      * */
-    fun setStatusListener(listener: OnTaskStateListener?){
+    internal fun setTaskStateListener(listener: OnTaskStateListener?){
         mStatusListener = listener
     }
 
