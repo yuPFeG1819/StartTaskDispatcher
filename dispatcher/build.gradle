@@ -3,12 +3,15 @@ plugins {
     id 'kotlin-android'
 }
 
+//上传的jitpack仓库group
+group = "com.github.yupfeg"
+
 android {
-    compileSdk 31
+    compileSdk 30
 
     defaultConfig {
         minSdk 21
-        targetSdk 31
+        targetSdk 30
         versionCode 1
         versionName "1.0"
 
