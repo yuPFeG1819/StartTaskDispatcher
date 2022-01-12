@@ -52,7 +52,7 @@ class App : Application(){
         DelayMainInitTask().run()
         AsyncInitTask().run()
         mainTask("initWebView"){ logd("run init WebView") }
-        logi("正常串行初始化耗时 ：${(SystemClock.elapsedRealtime() - startTime)} ms") //大约1160ms
+        logi("正常串行初始化耗时 ：${(SystemClock.elapsedRealtime() - startTime)} ms")
     }
 
     /**
@@ -101,12 +101,6 @@ class App : Application(){
             addTask(mainTask("initWebView"){ logd("run init WebView") })
 
             setOnDispatcherStateListener {
-                isDebug = true
-
-                onTaskSorted = {dependsInfo->
-                    Log.i("Logger","启动任务的依赖关系 :\n$dependsInfo")
-                }
-
                 onStartBefore = {
                     //Head Task
                     initLogger()
@@ -119,8 +113,16 @@ class App : Application(){
                 }
             }
 
-            setOnMonitorRecordListener {recordInfo->
-                logi("启动任务调度器性能监控记录 : \n$recordInfo")
+            setOnMonitorRecordListener {
+                isDebug = true
+
+                onTaskSorted = {tasksInfo->
+                    Log.i("Logger","启动任务排序结果 :\n$tasksInfo")
+                }
+
+                onAllTaskRecordResult = {timeInfo->
+                    logi("启动任务调度器性能监控记录 : $timeInfo")
+                }
             }
 
             //任务执行状态监听
@@ -177,19 +179,19 @@ class App : Application(){
             })
 
         dispatcherBuilder.setOnMonitorRecordListener(object : OnMonitorRecordListener {
-            override fun onMonitorRecordResult(timeInfo: ExecuteRecordInfo) {
+            override val isPrintSortedList: Boolean
+                get() = true
+
+            override fun onTaskSorted(tasksInfo: String) {
+                Log.i("logger","启动任务排序结果 :\n$tasksInfo")
+            }
+
+
+            override fun onAllTaskRecordResult(timeInfo: ExecuteRecordInfo) {
                 logi("启动任务调度器性能监控记录 : $timeInfo")
             }
         })
             .setOnDispatcherStateListener(object : OnDispatcherStateListener {
-
-                override val isPrintDependsMap: Boolean
-                    get() = true
-
-                override fun onTaskSorted(dependsInfo: String) {
-                    Log.i("logger","启动任务的依赖关系 :\n$dependsInfo")
-                }
-
                 override fun onStartBefore() {
                     //Head Task
                     initLogger()
