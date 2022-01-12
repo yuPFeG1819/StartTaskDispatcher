@@ -132,7 +132,7 @@ class TaskDispatcher internal constructor(builder: TaskDispatcherBuilder){
     private fun dispatchAsyncTasks(){
         for (task in mAllTasks){
             //设置任务执行回调监听
-            task.setStatusListener(mTaskStatusListener)
+            task.setTaskStateListener(mTaskStatusListener)
 
             if (task.isOnlyMainProcess && !isMainProcess){
                 //只在主进程中调用的任务，且非主进程时，直接完成该任务
