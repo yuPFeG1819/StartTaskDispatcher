@@ -17,8 +17,6 @@ buildscript {
 allprojects {
     repositories {
         google()
-        //central仓和jcenter仓的聚合仓 参见(https://developer.aliyun.com/mvn/guide)
-        maven{ url'https://maven.aliyun.com/repository/public'}
         mavenCentral()
         //jitpack
         maven {url = "https://jitpack.io"}

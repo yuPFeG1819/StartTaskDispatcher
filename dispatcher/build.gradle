@@ -1,6 +1,8 @@
 plugins {
     id 'com.android.library'
     id 'kotlin-android'
+    // JitPack Maven插件，暂不支持Gradle 7.0以上
+    id "com.github.dcendents.android-maven"
 }
 
 //上传的jitpack仓库group
