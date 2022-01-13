@@ -14,6 +14,21 @@
 - 支持Kotlin-DSL方式便捷构建任务调度器
 - 提供`IdleHanler`延迟任务调度器，便于统一管理延迟任务
 
+# 添加依赖
+[![](https://jitpack.io/v/yuPFeG1819/StartTaskDispatcher.svg)](https://jitpack.io/#yuPFeG1819/StartTaskDispatcher)
+
+```groovy
+    //root project build.gradle
+	allprojects {
+		repositories {
+			maven { url 'https://jitpack.io' }
+		}
+	}
+    //module build.gradle
+    dependencies {
+        implementation 'com.github.yuPFeG1819:StartTaskDispatcher:v1.0.2'
+    }
+```
 
 # 简单使用
 
@@ -237,7 +252,7 @@ buildDelayStartUp(this){
 
   - 其中对任务进行排序，使用`BFS`(**广度优先搜索**)算法进行拓扑排序
 
-    > 前提条件是任务可以构成[有向无环图](https://juejin.cn/post/6926794003794903048)
+    > 前提条件是任务集合可以构成[有向无环图](https://juejin.cn/post/6926794003794903048)
     >
     > **入度** ： 任务的前置依赖任务数目
     >
