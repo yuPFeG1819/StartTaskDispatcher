@@ -1,12 +1,22 @@
 plugins {
     id 'com.android.library'
     id 'kotlin-android'
-    // JitPack Maven插件，暂不支持Gradle 7.0以上
-    id "com.github.dcendents.android-maven"
+    // Maven插件
+    id 'maven-publish'
 }
-
-//上传的jitpack仓库group
-group = "com.github.yupfeg1819"
+//设置maven Publish目标
+afterEvaluate {
+    publishing {
+        publications {
+            release(MavenPublication) {
+                from components.release
+                groupId = 'com.github.yupfeg1819'
+                artifactId = 'StartTaskDispatcher'
+                version = '1.0.3'
+            }
+        }
+    }
+}
 
 android {
     compileSdk 30
