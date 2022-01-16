@@ -1,6 +1,5 @@
 package com.yupfeg.sampledispatcher.task
 
-import com.yupfeg.dispatcher.task.Task
 import com.yupfeg.logger.ext.logd
 
 /**
@@ -8,7 +7,7 @@ import com.yupfeg.logger.ext.logd
  * @author yuPFeG
  * @date
  */
-class AsyncInitTask : Task(){
+class AsyncInitTask : BaseAsyncTask(){
     companion object{
         const val TAG = "AsyncInitTask"
     }
@@ -17,9 +16,6 @@ class AsyncInitTask : Task(){
         get() = true
 
     override val isOnlyMainProcess: Boolean
-        get() = true
-
-    override val isRunOnMainThread: Boolean
         get() = true
 
     override val tag: String

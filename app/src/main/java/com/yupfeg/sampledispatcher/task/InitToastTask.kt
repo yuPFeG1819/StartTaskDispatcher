@@ -1,7 +1,6 @@
 package com.yupfeg.sampledispatcher.task
 
 import android.app.Application
-import com.yupfeg.dispatcher.task.Task
 import com.yupfeg.logger.ext.logd
 
 /**
@@ -9,7 +8,7 @@ import com.yupfeg.logger.ext.logd
  * @author yuPFeG
  * @date
  */
-class InitToastTask(private val application: Application) : Task(){
+class InitToastTask(private val application: Application) : BaseAsyncTask(){
     companion object{
         const val TAG = "InitToastTask"
     }

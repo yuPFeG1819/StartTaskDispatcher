@@ -1,6 +1,5 @@
 package com.yupfeg.sampledispatcher.task
 
-import com.yupfeg.dispatcher.task.Task
 import com.yupfeg.logger.ext.logd
 
 
@@ -9,7 +8,7 @@ import com.yupfeg.logger.ext.logd
  * @author yuPFeG
  * @date
  */
-class InitUMTask : Task(){
+class InitUMTask : BaseAsyncTask(){
     companion object{
         const val TAG = "initUmengTask"
     }
