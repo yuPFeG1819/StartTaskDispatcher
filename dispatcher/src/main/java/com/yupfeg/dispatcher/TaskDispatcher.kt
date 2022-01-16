@@ -8,6 +8,7 @@ import com.yupfeg.dispatcher.monitor.TaskExecuteMonitor
 import com.yupfeg.dispatcher.task.OnTaskStateListener
 import com.yupfeg.dispatcher.task.Task
 import com.yupfeg.dispatcher.task.TaskWrapper
+import java.lang.NullPointerException
 import java.util.*
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Future
@@ -144,9 +145,11 @@ class TaskDispatcher internal constructor(builder: TaskDispatcherBuilder){
                 mMainThreadTasks.add(task)
                 continue
             }
+
+            task.dispatchOn?: throw NullPointerException("you should set executor on async task")
             //调度异步任务
             val wrapper = TaskWrapper(task,this)
-            val future = task.dispatchOn.submit(wrapper)
+            val future = task.dispatchOn!!.submit(wrapper)
             mTaskFutures.add(future)
         }
     }

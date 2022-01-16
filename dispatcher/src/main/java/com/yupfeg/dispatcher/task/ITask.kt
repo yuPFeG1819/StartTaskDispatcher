@@ -30,12 +30,15 @@ interface ITask : Runnable{
 
     /**
      * 任务运行目标线程池
-     * - 与[isRunOnMainThread]冲突，
+     * - 推荐控制最大并发数，避免长时间占用时间片，导致主线程无法抢占CPU时间片
+     * - 在[isRunOnMainThread] = true，如果运行在UI线程可置为null
      * */
-    val dispatchOn : ExecutorService
+    val dispatchOn : ExecutorService?
 
     /**
      * 任务优先级
+     * - 数字越小，优先级越高，通常使用[Process]类常量
+     * - 运行在主线程则不需要去改优先级，确保主线程优先抢占CPU
      * */
     @IntRange(
         from = Process.THREAD_PRIORITY_FOREGROUND.toLong(),

@@ -2,9 +2,7 @@ package com.yupfeg.dispatcher.task
 
 import android.content.Context
 import android.os.Process
-import com.yupfeg.dispatcher.ExecutorProvider
 import java.util.concurrent.CountDownLatch
-import java.util.concurrent.ExecutorService
 import java.util.concurrent.TimeUnit
 
 /**
@@ -85,15 +83,6 @@ abstract class Task : ITask, OnTaskStateListener {
      * 任务的依赖关系集合，缓存所有前置任务的唯一标识
      * */
     private val mTaskDependsOnList : MutableList<String> = mutableListOf()
-
-
-    /**
-     * 异步任务调度执行的线程池
-     * - 默认为CPU密集型线程池
-     * 控制最大并发数，避免长时间占用线程，导致主线程无法抢占CPU时间片
-     * */
-    override val dispatchOn: ExecutorService
-        get() = ExecutorProvider.cpuExecutor
 
     /**
      * Task的优先级，运行在主线程则不需要去改优先级，确保主线程优先抢占CPU
