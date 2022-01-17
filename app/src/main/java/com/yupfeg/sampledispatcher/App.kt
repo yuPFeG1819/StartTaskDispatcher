@@ -12,24 +12,21 @@ import com.yupfeg.dispatcher.monitor.OnMonitorRecordListener
 import com.yupfeg.dispatcher.task.MainTask
 import com.yupfeg.dispatcher.task.OnTaskStateListener
 import com.yupfeg.dispatcher.task.TaskRunningInfo
+import com.yupfeg.executor.ExecutorProvider
+import com.yupfeg.executor.ext.buildDefCPUThreadPoolFactory
+import com.yupfeg.executor.ext.ioThreadPoolBuilder
+import com.yupfeg.executor.ext.prepareExecutor
 import com.yupfeg.logger.ext.logd
 import com.yupfeg.logger.ext.logi
 import com.yupfeg.logger.ext.setDslLoggerConfig
 import com.yupfeg.logger.printer.LogcatPrinter
 import com.yupfeg.sampledispatcher.task.*
 
+@Suppress("unused")
 class App : Application(){
-
-    companion object{
-        val instance : Application
-            get() = mInstance
-
-        private lateinit var mInstance : Application
-    }
 
     override fun onCreate() {
         super.onCreate()
-        mInstance = this
 //        normalInit()
         dslTaskDispatcher().start()
     }
@@ -37,7 +34,9 @@ class App : Application(){
     /**
      * 传统串行初始化
      * */
+    @Suppress("unused")
     private fun normalInit(){
+        initExecutor()
         initLogger()
         val startTime = SystemClock.elapsedRealtime()
         ActivityLifecycleTask(this).run()
@@ -59,8 +58,11 @@ class App : Application(){
      * 使用Kotlin-DSL方式构建任务调度器
      * */
     private fun dslTaskDispatcher() : TaskDispatcher {
+        initExecutor()
         val anchorTaskTag = "anchorTagTask"
         return startUp(this){
+            //设置调度器线程池
+            setExecutorService(ExecutorProvider.getInstance().cpuExecutor)
             //锚点任务
             addAnchorTask(anchorTaskTag){
                 add(ActivityLifecycleTask.TAG)
@@ -145,8 +147,13 @@ class App : Application(){
      * 传统方式构建启动任务调度器
      * @return
      */
+    @Suppress("unused")
     fun normalInitDispatcher() : TaskDispatcher{
+        initExecutor()
+
         val dispatcherBuilder = TaskDispatcherBuilder(this)
+            //设置调度线程池
+            .setExecutorService(ExecutorProvider.getInstance().cpuExecutor)
             //极光推送
             .addTask(InitJPushTask())
             .dependsOn(ActivityLifecycleTask.TAG, UncaughtCrashTask.TAG)
@@ -218,6 +225,20 @@ class App : Application(){
             })
 
         return dispatcherBuilder.build()
+    }
+
+    private fun initExecutor(){
+        prepareExecutor {
+            //创建默认cpu线程池的工厂类
+            buildDefCPUThreadPoolFactory {
+                //配置io密集型线程池
+                ioThreadPoolBuilder {
+                    //限制最大并发数
+                    maxPoolSize = 30
+                    keepAliveTime = 10
+                }
+            }
+        }
     }
 
     private fun initLogger(){

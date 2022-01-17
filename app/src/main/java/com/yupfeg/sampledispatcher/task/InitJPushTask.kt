@@ -1,5 +1,6 @@
 package com.yupfeg.sampledispatcher.task
 
+import com.yupfeg.dispatcher.task.Task
 import com.yupfeg.logger.ext.logd
 
 
@@ -8,7 +9,7 @@ import com.yupfeg.logger.ext.logd
  * @author yuPFeG
  * @date
  */
-class InitJPushTask : BaseAsyncTask(){
+class InitJPushTask : Task(){
 
     companion object{
         const val TAG = "InitJPushTask"

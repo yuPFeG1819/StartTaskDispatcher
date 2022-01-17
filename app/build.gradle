@@ -38,7 +38,7 @@ dependencies {
     implementation 'com.google.android.material:material:1.4.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.2'
     implementation("com.gitee.yupfeg:logger:1.0.4")
-    implementation("com.gitee.yupfeg:ExecutorProvider:1.0.0")
+    implementation("com.gitee.yupfeg:ExecutorProvider:1.0.1")
     implementation project(":dispatcher")
 
     testImplementation 'junit:junit:4.13.2'

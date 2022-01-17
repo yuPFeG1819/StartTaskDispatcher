@@ -1,5 +1,6 @@
 package com.yupfeg.sampledispatcher.task
 
+import com.yupfeg.dispatcher.task.Task
 import com.yupfeg.logger.ext.logd
 
 /**
@@ -7,7 +8,7 @@ import com.yupfeg.logger.ext.logd
  * @author yuPFeG
  * @date
  */
-class InitSharedTask : BaseAsyncTask() {
+class InitSharedTask : Task() {
 
     companion object{
         const val TAG = "InitSharedTask"
