@@ -9,6 +9,7 @@ import com.yupfeg.dispatcher.tools.TaskSortTools
 import com.yupfeg.dispatcher.task.OnTaskStateListener
 import com.yupfeg.dispatcher.task.Task
 import com.yupfeg.dispatcher.tools.AppProcessTools
+import java.util.concurrent.ExecutorService
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
@@ -67,6 +68,11 @@ class TaskDispatcherBuilder(
      * */
     internal lateinit var executeMonitor : TaskExecuteMonitor
         private set
+
+    /**
+     * 执行异步任务的线程池
+     * */
+    internal var executorService : ExecutorService? = null
 
     /**
      * 最新添加的任务
@@ -153,12 +159,28 @@ class TaskDispatcherBuilder(
     }
 
     /**
+     * 设置异步任务执行的线程池
+     * - 推荐控制最大并发数，避免长时间占用时间片，导致主线程无法抢占CPU时间片
+     * @param executorService 线程池
+     * @return builder类型，便于链式调用
+     */
+    @Suppress("unused")
+    @MainThread
+    fun setExecutorService(executorService: ExecutorService) : TaskDispatcherBuilder{
+        this.executorService = executorService
+        return this
+    }
+
+    /**
      * 构建启动任务调度器
      * @return 任务调度器实例
      */
     @Suppress("unused")
+    @Throws(NullPointerException::class)
     @MainThread
     fun build() : TaskDispatcher {
+        executorService?:throw NullPointerException("you should set async task executor")
+
         executeMonitor = TaskExecuteMonitor(mOnMonitorRecordListener)
         if (allTasks.isNotEmpty()){
             val startTime = SystemClock.elapsedRealtime()
@@ -174,7 +196,6 @@ class TaskDispatcherBuilder(
 
     /**
      * 输出被依赖的任务信息
-     * - 仅在调试时使用
      */
     private fun printDependsTaskInfo() {
         if (mOnMonitorRecordListener?.isPrintSortedList == false) return

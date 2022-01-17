@@ -8,9 +8,9 @@ import com.yupfeg.dispatcher.monitor.TaskExecuteMonitor
 import com.yupfeg.dispatcher.task.OnTaskStateListener
 import com.yupfeg.dispatcher.task.Task
 import com.yupfeg.dispatcher.task.TaskWrapper
-import java.lang.NullPointerException
 import java.util.*
 import java.util.concurrent.CountDownLatch
+import java.util.concurrent.ExecutorService
 import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
@@ -84,6 +84,11 @@ class TaskDispatcher internal constructor(builder: TaskDispatcherBuilder){
         = builder.onDispatcherStatusListener
 
     /**
+     * 异步任务调度的线程池
+     * */
+    private val mExecutorService : ExecutorService = builder.executorService!!
+
+    /**
      * 当前是否处于主进程
      * */
     @get:JvmName("isMainProcess")
@@ -146,10 +151,9 @@ class TaskDispatcher internal constructor(builder: TaskDispatcherBuilder){
                 continue
             }
 
-            task.dispatchOn?: throw NullPointerException("you should set executor on async task")
             //调度异步任务
             val wrapper = TaskWrapper(task,this)
-            val future = task.dispatchOn!!.submit(wrapper)
+            val future = mExecutorService.submit(wrapper)
             mTaskFutures.add(future)
         }
     }

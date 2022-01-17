@@ -2,7 +2,6 @@ package com.yupfeg.dispatcher.task
 
 import android.os.Process
 import androidx.annotation.IntRange
-import java.util.concurrent.ExecutorService
 
 /**
  * 抽象化的任务流程，应用于页面启用等位置，进行延迟启动或异步启动
@@ -27,13 +26,6 @@ interface ITask : Runnable{
      * - 比如地图的初始化，只有地图初始化完成后，才能进入主页
      * */
     val isNeedWaitTaskOver : Boolean
-
-    /**
-     * 任务运行目标线程池
-     * - 推荐控制最大并发数，避免长时间占用时间片，导致主线程无法抢占CPU时间片
-     * - 在[isRunOnMainThread] = true，如果运行在UI线程可置为null
-     * */
-    val dispatchOn : ExecutorService?
 
     /**
      * 任务优先级

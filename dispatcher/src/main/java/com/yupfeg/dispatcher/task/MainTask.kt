@@ -18,6 +18,4 @@ abstract class MainTask : Task(){
         return Process.THREAD_PRIORITY_DEFAULT
     }
 
-    override val dispatchOn: ExecutorService?
-        get() = null
 }
