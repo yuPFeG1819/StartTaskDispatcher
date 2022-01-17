@@ -62,7 +62,7 @@ class App : Application(){
         val anchorTaskTag = "anchorTagTask"
         return startUp(this){
             //设置调度器线程池
-            setExecutorService(ExecutorProvider.getInstance().cpuExecutor)
+            setExecutorService(ExecutorProvider.cpuExecutor)
             //锚点任务
             addAnchorTask(anchorTaskTag){
                 add(ActivityLifecycleTask.TAG)
@@ -153,7 +153,7 @@ class App : Application(){
 
         val dispatcherBuilder = TaskDispatcherBuilder(this)
             //设置调度线程池
-            .setExecutorService(ExecutorProvider.getInstance().cpuExecutor)
+            .setExecutorService(ExecutorProvider.cpuExecutor)
             //极光推送
             .addTask(InitJPushTask())
             .dependsOn(ActivityLifecycleTask.TAG, UncaughtCrashTask.TAG)
