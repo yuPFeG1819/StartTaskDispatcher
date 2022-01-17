@@ -12,7 +12,7 @@ afterEvaluate {
                 from components.release
                 groupId = 'com.github.yupfeg1819'
                 artifactId = 'StartTaskDispatcher'
-                version = '1.0.3'
+                version = '1.0.4'
             }
         }
     }
