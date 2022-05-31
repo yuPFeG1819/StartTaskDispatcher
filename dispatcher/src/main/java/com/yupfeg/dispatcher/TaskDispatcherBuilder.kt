@@ -1,7 +1,6 @@
 package com.yupfeg.dispatcher
 
 import android.content.Context
-import android.os.SystemClock
 import androidx.annotation.MainThread
 import com.yupfeg.dispatcher.monitor.OnMonitorRecordListener
 import com.yupfeg.dispatcher.monitor.TaskExecuteMonitor
@@ -21,8 +20,8 @@ class TaskDispatcherBuilder(
     private val context: Context,
 ) {
 
-    companion object{
-        private var isFirstInit : Boolean = false
+    companion object {
+        private var isFirstInit: Boolean = false
 
         /**
          * 是否处于主进程
@@ -51,37 +50,37 @@ class TaskDispatcherBuilder(
     /**
      * 单个任务执行状态回调监听
      * */
-    internal var taskStatusListener : OnTaskStateListener? = null
+    internal var taskStatusListener: OnTaskStateListener? = null
 
     /**
      * 性能监控回调监听
      * */
-    private var mOnMonitorRecordListener : OnMonitorRecordListener? = null
+    private var mOnMonitorRecordListener: OnMonitorRecordListener? = null
 
     /**
      * 调度器状态回调监听
      * */
-    internal var onDispatcherStatusListener : OnDispatcherStateListener? = null
+    internal var onDispatcherStatusListener: OnDispatcherStateListener? = null
 
     /**
      * 任务执行性能监控
      * */
-    internal lateinit var executeMonitor : TaskExecuteMonitor
+    internal lateinit var executeMonitor: TaskExecuteMonitor
         private set
 
     /**
      * 执行异步任务的线程池
      * */
-    internal var executorService : ExecutorService? = null
+    internal var executorService: ExecutorService? = null
 
     /**
      * 最新添加的任务
      * - 仅用于快捷添加该任务的依赖任务
      * */
-    private var mCacheTask : Task? = null
+    private var mCacheTask: Task? = null
 
     init {
-        if (!isFirstInit){
+        if (!isFirstInit) {
             isMainProcess = AppProcessTools.isMainProcess(context)
             isFirstInit = true
         }
@@ -93,7 +92,7 @@ class TaskDispatcherBuilder(
      * @return builder类型，便于链式调用
      * */
     @Suppress("unused")
-    fun setOnMonitorRecordListener(listener: OnMonitorRecordListener) : TaskDispatcherBuilder {
+    fun setOnMonitorRecordListener(listener: OnMonitorRecordListener): TaskDispatcherBuilder {
         this.mOnMonitorRecordListener = listener
         return this
     }
@@ -106,7 +105,7 @@ class TaskDispatcherBuilder(
     @Suppress("unused")
     fun setOnDispatcherStateListener(
         listener: OnDispatcherStateListener
-    ) : TaskDispatcherBuilder {
+    ): TaskDispatcherBuilder {
         this.onDispatcherStatusListener = listener
         return this
     }
@@ -117,7 +116,7 @@ class TaskDispatcherBuilder(
      * @return builder类型，便于链式调用
      */
     @Suppress("unused")
-    fun setOnTaskStateListener(listener: OnTaskStateListener) : TaskDispatcherBuilder {
+    fun setOnTaskStateListener(listener: OnTaskStateListener): TaskDispatcherBuilder {
         this.taskStatusListener = listener
         return this
     }
@@ -129,13 +128,13 @@ class TaskDispatcherBuilder(
      * */
     @Suppress("unused")
     @MainThread
-    fun addTask(task : Task?) : TaskDispatcherBuilder {
-        task?:return this
+    fun addTask(task: Task?): TaskDispatcherBuilder {
+        task ?: return this
         mCacheTask = task
         task.setContext(context)
 
         allTasks.add(task)
-        if (task.isNeedMainWaitOver()){
+        if (task.isAsyncTaskNeedMainWaitOver()) {
             //需要等待该任务完成后才能执行主线程，则主线程的同步阻塞锁数量+1
             needWaitTaskCount.getAndIncrement()
         }
@@ -150,8 +149,8 @@ class TaskDispatcherBuilder(
      * */
     @Suppress("unused")
     @MainThread
-    fun dependsOn(vararg taskTag : String) : TaskDispatcherBuilder {
-        mCacheTask?:return this
+    fun dependsOn(vararg taskTag: String): TaskDispatcherBuilder {
+        mCacheTask ?: return this
         for (taskClazz in taskTag) {
             mCacheTask?.addDependsOnTaskTag(taskClazz)
         }
@@ -166,7 +165,7 @@ class TaskDispatcherBuilder(
      */
     @Suppress("unused")
     @MainThread
-    fun setExecutorService(executorService: ExecutorService) : TaskDispatcherBuilder{
+    fun setExecutorService(executorService: ExecutorService): TaskDispatcherBuilder {
         this.executorService = executorService
         return this
     }
@@ -178,18 +177,17 @@ class TaskDispatcherBuilder(
     @Suppress("unused")
     @Throws(NullPointerException::class)
     @MainThread
-    fun build() : TaskDispatcher {
-        executorService?:throw NullPointerException("you should set async task executor")
+    fun build(): TaskDispatcher {
+        executorService ?: throw NullPointerException("you should set async task executor")
 
         executeMonitor = TaskExecuteMonitor(mOnMonitorRecordListener)
-        if (allTasks.isNotEmpty()){
-            val startTime = SystemClock.elapsedRealtime()
+        if (allTasks.isNotEmpty()) {
             //进行拓扑排序
-            allTasks = TaskSortTools.getSortedList(allTasks,taskDependsClazzMap)
-            executeMonitor.recordSortTaskListTime(SystemClock.elapsedRealtime()-startTime)
+            executeMonitor.recordSortTaskListTime {
+                allTasks = TaskSortTools.getSortedList(allTasks, taskDependsClazzMap)
+            }
             printDependsTaskInfo()
         }
-
         mCacheTask = null
         return TaskDispatcher(this)
     }
@@ -202,14 +200,14 @@ class TaskDispatcherBuilder(
         if (allTasks.isEmpty() || taskDependsClazzMap.isEmpty()) return
         val stringBuilder = StringBuilder().apply {
             append("task sort list : \n")
-            for (task in allTasks){
+            for (task in allTasks) {
                 append("task tag : ${task.tag} ,\n")
             }
             append("all dependsOn relation : \n")
             for (taskTag in taskDependsClazzMap.keys) {
                 val tasks = taskDependsClazzMap[taskTag]
                 append(
-                    "the $taskTag task is preTask of ${tasks?.size?:0} count task \n"
+                    "the $taskTag task is preTask of ${tasks?.size ?: 0} count task \n"
                 )
                 if (tasks.isNullOrEmpty()) continue
                 for (task in tasks) {
