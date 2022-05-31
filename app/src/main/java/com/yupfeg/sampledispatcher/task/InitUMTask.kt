@@ -14,6 +14,9 @@ class InitUMTask : Task(){
         const val TAG = "initUmengTask"
     }
 
+    override val isEnable: Boolean
+        get() = false
+
     override val tag: String
         get() = TAG
 

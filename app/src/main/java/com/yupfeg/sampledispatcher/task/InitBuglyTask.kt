@@ -17,6 +17,9 @@ class InitBuglyTask : Task(){
     override val tag: String
         get() = TAG
 
+    override val isEnable: Boolean
+        get() = false
+
     //需要主线程等待
     override val isNeedWaitTaskOver: Boolean
         get() = true

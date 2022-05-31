@@ -14,6 +14,9 @@ class InitBDMapTask : Task() {
         const val TAG = "InitBDMapTask"
     }
 
+    override val isEnable: Boolean
+        get() = false
+
     override val tag: String
         get() = TAG
 

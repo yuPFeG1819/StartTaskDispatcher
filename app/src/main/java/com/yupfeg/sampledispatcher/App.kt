@@ -23,7 +23,7 @@ import com.yupfeg.logger.printer.LogcatPrinter
 import com.yupfeg.sampledispatcher.task.*
 
 @Suppress("unused")
-class App : Application(){
+class App : Application() {
 
     override fun onCreate() {
         super.onCreate()
@@ -35,7 +35,7 @@ class App : Application(){
      * 传统串行初始化
      * */
     @Suppress("unused")
-    private fun normalInit(){
+    private fun normalInit() {
         initExecutor()
         initLogger()
         val startTime = SystemClock.elapsedRealtime()
@@ -50,39 +50,39 @@ class App : Application(){
         InitBuglyTask().run()
         DelayMainInitTask().run()
         AsyncInitTask().run()
-        mainTask("initWebView"){ logd("run init WebView") }
+        mainTask("initWebView") { logd("run init WebView") }
         logi("正常串行初始化耗时 ：${(SystemClock.elapsedRealtime() - startTime)} ms")
     }
 
     /**
      * 使用Kotlin-DSL方式构建任务调度器
      * */
-    private fun dslTaskDispatcher() : TaskDispatcher {
+    private fun dslTaskDispatcher(): TaskDispatcher {
         initExecutor()
         val anchorTaskTag = "anchorTagTask"
-        return startUp(this){
+        return startUp(this) {
             //设置调度器线程池
             setExecutorService(ExecutorProvider.cpuExecutor)
             //锚点任务
-            addAnchorTask(anchorTaskTag){
+            addAnchorTask(anchorTaskTag) {
                 add(ActivityLifecycleTask.TAG)
                 add(UncaughtCrashTask.TAG)
                 add(InitToastTask.TAG)
             }
             //极光推送
-            addTask(InitJPushTask()){
+            addTask(InitJPushTask()) {
                 add(anchorTaskTag)
             }
             //组件路由
-            addTask(InitARouterTask()){
+            addTask(InitARouterTask()) {
                 add(anchorTaskTag)
             }
             //分享组件
-            addTask(InitSharedTask()){
+            addTask(InitSharedTask()) {
                 add(anchorTaskTag)
             }
             //toast组件
-            addTask(InitToastTask(this@App)){
+            addTask(InitToastTask(this@App)) {
                 add(UncaughtCrashTask.TAG)
             }
             //注册生命周期
@@ -92,15 +92,13 @@ class App : Application(){
             //友盟组件
             addTask(InitUMTask())
             //百度地图
-            addTask(InitBDMapTask()){
-                add(anchorTaskTag)
-            }
+            addTask(InitBDMapTask()) { add(anchorTaskTag) }
             //bugly
-            addTask(InitBuglyTask()){ add(UncaughtCrashTask.TAG) }
-            addTask(DelayMainInitTask()).dependsOn(anchorTaskTag)
-            addTask(AsyncInitTask())
+            addTask(InitBuglyTask()) { add(UncaughtCrashTask.TAG) }
+            addTask(DelayMainInitTask()).dependsOn(InitBDMapTask.TAG)
+            addTask(AsyncInitTask()).dependsOn(InitUMTask.TAG)
             //测试简单任务
-            addTask(mainTask("initWebView"){ logd("run init WebView") })
+            addTask(mainTask("initWebView") { logd("run init WebView") }).dependsOn(InitBuglyTask.TAG)
 
             setOnDispatcherStateListener {
                 onStartBefore = {
@@ -118,25 +116,25 @@ class App : Application(){
             setOnMonitorRecordListener {
                 isDebug = true
 
-                onTaskSorted = {tasksInfo->
-                    Log.i("Logger","启动任务排序结果 :\n$tasksInfo")
+                onTaskSorted = { tasksInfo ->
+                    Log.i("Logger", "启动任务排序结果 :\n$tasksInfo")
                 }
 
-                onAllTaskRecordResult = {timeInfo->
+                onAllTaskRecordResult = { timeInfo ->
                     logi("启动任务调度器性能监控记录 : $timeInfo")
                 }
             }
 
             //任务执行状态监听
             setOnTaskStateListener {
-                onWait = {tag ->
+                onWait = { tag ->
                     logi("$tag 任务开始等待")
                 }
 
-                onStart = {tag,waitTime->
+                onStart = { tag, waitTime ->
                     logi("$tag 任务开始执行 , 已等待前置任务 $waitTime ms")
                 }
-                onFinished = {runningInfo->
+                onFinished = { runningInfo ->
                     logi("任务已执行完成 : $runningInfo")
                 }
             }
@@ -148,7 +146,7 @@ class App : Application(){
      * @return
      */
     @Suppress("unused")
-    fun normalInitDispatcher() : TaskDispatcher{
+    fun normalInitDispatcher(): TaskDispatcher {
         initExecutor()
 
         val dispatcherBuilder = TaskDispatcherBuilder(this)
@@ -159,9 +157,9 @@ class App : Application(){
             .dependsOn(ActivityLifecycleTask.TAG, UncaughtCrashTask.TAG)
             //组件路由
             .addTask(InitARouterTask())
-            .dependsOn(ActivityLifecycleTask.TAG, InitToastTask.TAG,UncaughtCrashTask.TAG)
+            .dependsOn(ActivityLifecycleTask.TAG, InitToastTask.TAG, UncaughtCrashTask.TAG)
             //分享组件
-            .addTask(InitSharedTask()).dependsOn(ActivityLifecycleTask.TAG,InitToastTask.TAG)
+            .addTask(InitSharedTask()).dependsOn(ActivityLifecycleTask.TAG, InitToastTask.TAG)
             //toast组件
             .addTask(InitToastTask(this)).dependsOn(UncaughtCrashTask.TAG)
             //注册Activity生命周期
@@ -174,9 +172,9 @@ class App : Application(){
             .addTask(InitBDMapTask()).dependsOn(UncaughtCrashTask.TAG)
             //bugly
             .addTask(InitBuglyTask()).dependsOn(UncaughtCrashTask.TAG)
-            .addTask(DelayMainInitTask())
-            .addTask(AsyncInitTask())
-            .addTask(object : MainTask(){
+            .addTask(DelayMainInitTask()).dependsOn(InitBDMapTask.TAG)
+            .addTask(AsyncInitTask()).dependsOn(InitUMTask.TAG)
+            .addTask(object : MainTask() {
                 override val tag: String
                     get() = "initWebView"
 
@@ -190,7 +188,7 @@ class App : Application(){
                 get() = true
 
             override fun onTaskSorted(tasksInfo: String) {
-                Log.i("logger","启动任务排序结果 :\n$tasksInfo")
+                Log.i("logger", "启动任务排序结果 :\n$tasksInfo")
             }
 
 
@@ -214,7 +212,7 @@ class App : Application(){
                     logi("$tag 任务开始等待")
                 }
 
-                override fun onTaskStart(tag: String, waitTime: Long){
+                override fun onTaskStart(tag: String, waitTime: Float) {
                     logi("$tag 任务开始执行 , 已等待前置任务 $waitTime ms")
                 }
 
@@ -227,7 +225,7 @@ class App : Application(){
         return dispatcherBuilder.build()
     }
 
-    private fun initExecutor(){
+    private fun initExecutor() {
         prepareExecutor {
             //创建默认cpu线程池的工厂类
             buildDefCPUThreadPoolFactory {
@@ -241,7 +239,7 @@ class App : Application(){
         }
     }
 
-    private fun initLogger(){
+    private fun initLogger() {
         setDslLoggerConfig {
             //开启调用位置追踪
             isDisplayClassInfo = true

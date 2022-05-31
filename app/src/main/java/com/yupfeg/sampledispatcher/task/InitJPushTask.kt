@@ -15,6 +15,9 @@ class InitJPushTask : Task(){
         const val TAG = "InitJPushTask"
     }
 
+    override val isEnable: Boolean
+        get() = false
+
     override val tag: String
         get() = TAG
 
