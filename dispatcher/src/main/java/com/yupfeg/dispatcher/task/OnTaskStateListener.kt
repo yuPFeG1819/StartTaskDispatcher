@@ -22,7 +22,7 @@ interface OnTaskStateListener {
      * @param tag 任务唯一标识
      * @param waitTime 等待前置任务的时间(ms)
      * */
-    fun onTaskStart(tag : String,waitTime: Long)
+    fun onTaskStart(tag : String,waitTime: Float)
 
     /**
      * 任务完成回调
@@ -49,7 +49,7 @@ open class DefaultTaskStateListener : OnTaskStateListener{
      * 任务开始前回调，返回任务标识与等待前置任务时间(ms)
      * - 可能在子线程，注意线程安全
      * */
-    var onStart : ((tag : String,waitTime : Long)->Unit)? = null
+    var onStart : ((tag : String,waitTime : Float)->Unit)? = null
 
     /**
      * 任务完成后回调，返回任务执行信息记录
@@ -61,7 +61,7 @@ open class DefaultTaskStateListener : OnTaskStateListener{
         onWait?.invoke(tag)
     }
 
-    override fun onTaskStart(tag: String, waitTime: Long) {
+    override fun onTaskStart(tag: String, waitTime: Float) {
         onStart?.invoke(tag, waitTime)
     }
 
@@ -76,10 +76,10 @@ open class DefaultTaskStateListener : OnTaskStateListener{
  * */
 data class TaskRunningInfo(
     val tag : String,
-    /**任务等待前置任务时间*/
-    val waitTime: Long,
+    /**任务等待前置任务时间(ms)*/
+    val waitTime: Float,
     /**任务执行时间(ms)*/
-    val runTime: Long,
+    val runTime: Float,
     /**是否需要主线程等待*/
     val isNeedMainWait : Boolean,
     /**执行线程id*/
