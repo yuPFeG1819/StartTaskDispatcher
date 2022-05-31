@@ -17,14 +17,14 @@ import java.util.*
  * @date 2021/12/11
  */
 @Suppress("unused")
-class DelayTaskDispatcher private constructor(builder : Builder) {
+class DelayTaskDispatcher private constructor(builder: Builder) {
 
-    private var mTaskQueue : Queue<Task> = builder.taskQueue
+    private var mTaskQueue: Queue<Task> = builder.taskQueue
 
     private val mIdleHandler = MessageQueue.IdleHandler {
         // 分批执行的好处在于每一个task占用主线程的时间相对
         // 来说很短暂，并且此时CPU是空闲的，这些能更有效地避免UI卡顿
-        mTaskQueue.poll()?.also {task->
+        mTaskQueue.poll()?.also { task ->
             TaskWrapper(task).run()
         }
         //如果所有延迟启动任务都结束，则移除该IdleHandler
@@ -35,7 +35,7 @@ class DelayTaskDispatcher private constructor(builder : Builder) {
      * 开启执行延迟任务
      * */
     @MainThread
-    fun start(){
+    fun start() {
         Looper.myQueue().addIdleHandler(mIdleHandler)
     }
 
@@ -44,7 +44,7 @@ class DelayTaskDispatcher private constructor(builder : Builder) {
      * - 通常在视图销毁时调用，防止任务未执行完造成内存泄漏
      * */
     @MainThread
-    fun clearTask(){
+    fun clearTask() {
         mTaskQueue.clear()
         Looper.myQueue().removeIdleHandler(mIdleHandler)
     }
@@ -53,18 +53,18 @@ class DelayTaskDispatcher private constructor(builder : Builder) {
      * 延迟任务调度器构筑器
      * - 不允许添加依赖任务，延迟任务只是在主线程空闲时执行
      * */
-    class Builder(private val context: Context){
+    class Builder(private val context: Context) {
 
-        internal val taskQueue : Queue<Task> = LinkedList()
+        internal val taskQueue: Queue<Task> = LinkedList()
 
-        private var mTaskExecuteListener : OnTaskStateListener? = null
+        private var mTaskExecuteListener: OnTaskStateListener? = null
 
         /**
          * 设置任务执行状态监听
          * @param listener
          * @return 延迟任务调度器本身，便于链式调用
          * */
-        fun setOnTaskStateListener(listener : OnTaskStateListener) : Builder{
+        fun setOnTaskStateListener(listener: OnTaskStateListener): Builder {
             mTaskExecuteListener = listener
             return this
         }
@@ -74,7 +74,7 @@ class DelayTaskDispatcher private constructor(builder : Builder) {
          * @param task
          * @return 延迟任务调度器本身，便于链式调用
          * */
-        fun addTask(task : Task) : Builder {
+        fun addTask(task: Task): Builder {
             task.setContext(context.applicationContext)
             taskQueue.offer(task)
             return this
@@ -84,7 +84,7 @@ class DelayTaskDispatcher private constructor(builder : Builder) {
          * 构建延迟任务调度器
          * */
         @MainThread
-        fun builder() : DelayTaskDispatcher{
+        fun builder(): DelayTaskDispatcher {
             for (task in taskQueue) {
                 task.setTaskStateListener(mTaskExecuteListener)
             }
