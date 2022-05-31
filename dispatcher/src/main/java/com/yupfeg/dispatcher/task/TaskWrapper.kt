@@ -1,8 +1,8 @@
 package com.yupfeg.dispatcher.task
 
 import android.os.Process
-import android.os.SystemClock
 import com.yupfeg.dispatcher.TaskDispatcher
+import com.yupfeg.dispatcher.monitor.TaskExecuteMonitor
 
 /**
  * 抽象启动任务的包装类，实际执行的任务
@@ -10,35 +10,31 @@ import com.yupfeg.dispatcher.TaskDispatcher
  * @date 2022/01/05
  */
 internal class TaskWrapper @JvmOverloads constructor(
-    private val originTask : Task,
-    private val dispatcher : TaskDispatcher? = null,
-) : Runnable{
+    private val originTask: Task,
+    private val dispatcher: TaskDispatcher? = null,
+) : Runnable {
 
     override fun run() {
         Process.setThreadPriority(originTask.taskPriority())
         originTask.onTaskWait(originTask.tag)
-        val waitTime = measureTime{
+        val waitTime = TaskExecuteMonitor.measureTime {
             //等待前置任务完成
             originTask.awaitDependsTask()
         }
-        originTask.onTaskStart(originTask.tag,waitTime)
-        val runTime = measureTime {
+        originTask.onTaskStart(originTask.tag, waitTime)
+        val runTime = TaskExecuteMonitor.measureTime {
             //执行当前任务
             originTask.run()
         }
         //记录任务执行时间
         recordTaskRunningInfo(waitTime, runTime)
         dispatcher?.apply {
-            taskExecuteMonitor.recordTaskCostTime(originTask.tag,runTime)
+            taskExecuteMonitor.recordTaskCostTime(
+                originTask.tag, runTime, originTask.isRunOnMainThread
+            )
             //通知后续任务可以执行
             markTaskOverDone(originTask)
         }
-    }
-
-    private inline fun measureTime(block : ()->Unit) : Long{
-        val startTime = SystemClock.elapsedRealtime()
-        block()
-        return SystemClock.elapsedRealtime() - startTime
     }
 
     /**
@@ -46,13 +42,13 @@ internal class TaskWrapper @JvmOverloads constructor(
      * @param waitTime 等待开始执行时间
      * @param runTime 任务实际执行时间
      * */
-    private fun recordTaskRunningInfo(waitTime : Long, runTime : Long){
+    private fun recordTaskRunningInfo(waitTime: Float, runTime: Float) {
         if (!originTask.isMonitorTaskOver) return
         val runningInfo = TaskRunningInfo(
             tag = originTask.tag,
             waitTime = waitTime,
             runTime = runTime,
-            isNeedMainWait = originTask.isNeedMainWaitOver(),
+            isNeedMainWait = originTask.isAsyncTaskNeedMainWaitOver(),
             threadId = Thread.currentThread().id,
             threadName = Thread.currentThread().name
         )
