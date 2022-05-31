@@ -8,24 +8,32 @@ import androidx.annotation.IntRange
  * @author yuPFeG
  * @date 2021/12/11
  */
-interface ITask : Runnable{
+interface ITask : Runnable {
+
+    /**
+     * 是否启用任务，默认为 `true`
+     * - 通常用于类似隐私政策的场景，只能在同意隐私政策才能执行初始化。
+     * 由业务层实现该变量的条件
+     * */
+    val isEnable: Boolean
+        get() = true
 
     /**
      * 是否在主线程
      * */
-    val isRunOnMainThread : Boolean
+    val isRunOnMainThread: Boolean
 
     /**
      * 是否只在主进程运行
      * */
-    val isOnlyMainProcess : Boolean
+    val isOnlyMainProcess: Boolean
 
     /**
      * 是否需要等待该任务完成
      * - 与[isRunOnMainThread]配合使用，主线程需要等待这个异步任务执行完毕后才能继续执行
      * - 比如地图的初始化，只有地图初始化完成后，才能进入主页
      * */
-    val isNeedWaitTaskOver : Boolean
+    val isNeedWaitTaskOver: Boolean
 
     /**
      * 任务优先级
@@ -36,5 +44,5 @@ interface ITask : Runnable{
         from = Process.THREAD_PRIORITY_FOREGROUND.toLong(),
         to = Process.THREAD_PRIORITY_LOWEST.toLong()
     )
-    fun taskPriority() : Int
+    fun taskPriority(): Int
 }
