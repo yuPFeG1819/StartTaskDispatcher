@@ -16,7 +16,7 @@ abstract class Task : ITask, OnTaskStateListener {
 
     companion object {
         /**最大等待前置任务时间(s)*/
-        internal const val MAX_AWAIT_TIME = 10
+        internal const val DEF_MAX_AWAIT_TIME : Long = 5 * 1000
     }
 
     /**
@@ -31,6 +31,11 @@ abstract class Task : ITask, OnTaskStateListener {
      * 导致最后只是在等它，这种可以早开始。
      * */
     open val isNeedRunAsSoon: Boolean = false
+
+    /**
+     * 当前任务最大等待前置任务时间（ms）
+     * */
+    open val maxAwaitTime : Long = DEF_MAX_AWAIT_TIME
 
     /**
      * 当前任务依赖的前置任务数量（需要等待被依赖的Task执行完毕才能执行自己），默认没有依赖
@@ -113,12 +118,19 @@ abstract class Task : ITask, OnTaskStateListener {
     // <editor-fold desc="前置依赖锁">
 
     /**
+     * 校验当前是否需要等待前置依赖任务
+     * */
+    internal fun isNeedAwait() : Boolean{
+        return mTaskDependsOnList.isNotEmpty()
+    }
+
+    /**
      * 等待所有前置依赖任务先执行完成，然后再执行当前任务
      * */
     @Throws(InterruptedException::class)
     internal fun awaitDependsTask() {
-        val latch = tryGetCountDownLatch()
-        latch.await(MAX_AWAIT_TIME.toLong(), TimeUnit.SECONDS)
+        if (!isNeedAwait()) return
+        tryGetCountDownLatch().await(maxAwaitTime , TimeUnit.MILLISECONDS)
     }
 
     /**
@@ -127,8 +139,8 @@ abstract class Task : ITask, OnTaskStateListener {
      * */
     @Suppress("unused")
     internal fun dependOverDone() {
-        val latch = tryGetCountDownLatch()
-        latch.countDown()
+        if (!isNeedAwait()) return
+        tryGetCountDownLatch().countDown()
     }
 
     /**
@@ -137,9 +149,7 @@ abstract class Task : ITask, OnTaskStateListener {
     private fun tryGetCountDownLatch(): CountDownLatch {
         return mDependsLatch ?: synchronized(this) {
             mDependsLatch ?: run {
-                CountDownLatch(
-                    if (mTaskDependsOnList.isNullOrEmpty()) 0 else mTaskDependsOnList.size
-                ).apply { mDependsLatch = this }
+                CountDownLatch(mTaskDependsOnList.size).apply { mDependsLatch = this }
             }
         }
     }
