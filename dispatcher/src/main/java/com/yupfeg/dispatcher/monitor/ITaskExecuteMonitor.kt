@@ -1,0 +1,39 @@
+package com.yupfeg.dispatcher.monitor
+
+import android.os.SystemClock
+
+/**
+ * 任务执行性能监控通用接口
+ * @author yuPFeG
+ * @date 2022/06/01
+ */
+interface ITaskExecuteMonitor {
+
+    companion object {
+        const val NANO_TIME_UNIT = 1000000f
+
+        /**
+         * 测量从指定开始时间到当前时间经过的时间(ms)
+         * @param action 测量执行时间的代码块
+         * @return 执行经过时间(ms)
+         * */
+        inline fun measureTime(action: () -> Unit): Float {
+            val startTime = SystemClock.elapsedRealtimeNanos()
+            action()
+            return (SystemClock.elapsedRealtimeNanos() - startTime) / NANO_TIME_UNIT
+        }
+    }
+
+    /**
+     * 记录任务的运行消耗时间
+     * - 注意线程安全问题
+     * @param tag 任务的唯一标识
+     * @param runTime 任务实际执行时间（ms）
+     * */
+    fun recordTaskCostTime(tag : String,runTime : Float)
+
+    /**
+     * 分发调度任务执行记录信息
+     * */
+    fun dispatchExecuteRecordInfo()
+}
