@@ -4,7 +4,8 @@ import android.content.Context
 import com.yupfeg.dispatcher.DefaultDispatcherStateListener
 import com.yupfeg.dispatcher.DelayTaskDispatcher
 import com.yupfeg.dispatcher.annotation.TaskDispatcherDslMarker
-import com.yupfeg.dispatcher.monitor.DelayTaskExecuteMonitor
+import com.yupfeg.dispatcher.monitor.delay.DelayTaskRecordInfo
+import com.yupfeg.dispatcher.monitor.delay.OnDelayTaskRecordListener
 import com.yupfeg.dispatcher.task.DefaultTaskStateListener
 import com.yupfeg.dispatcher.task.MainTask
 
@@ -71,10 +72,10 @@ fun DelayTaskDispatcher.Builder.setOnDispatcherStateListener(
  * */
 @Suppress("unused")
 fun DelayTaskDispatcher.Builder.setOnMonitorRecordListener(
-    block: (DelayTaskExecuteMonitor.TaskRecordInfo) -> Unit
+    block: (DelayTaskRecordInfo) -> Unit
 ): DelayTaskDispatcher.Builder {
-    setOnMonitorRecordListener(object : DelayTaskExecuteMonitor.OnTaskRecordListener {
-        override fun onAllTaskRecordResult(timeInfo: DelayTaskExecuteMonitor.TaskRecordInfo) {
+    setOnMonitorRecordListener(object : OnDelayTaskRecordListener {
+        override fun onAllTaskRecordResult(timeInfo: DelayTaskRecordInfo) {
             block(timeInfo)
         }
     })
