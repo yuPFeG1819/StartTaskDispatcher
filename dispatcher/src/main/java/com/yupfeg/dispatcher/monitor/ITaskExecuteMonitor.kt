@@ -1,13 +1,14 @@
 package com.yupfeg.dispatcher.monitor
 
 import android.os.SystemClock
+import com.yupfeg.dispatcher.task.TaskRunningInfo
 
 /**
  * 任务执行性能监控通用接口
  * @author yuPFeG
  * @date 2022/06/01
  */
-interface ITaskExecuteMonitor {
+internal interface ITaskExecuteMonitor {
 
     companion object {
         const val NANO_TIME_UNIT = 1000000f
@@ -25,12 +26,12 @@ interface ITaskExecuteMonitor {
     }
 
     /**
-     * 记录任务的运行消耗时间
-     * - 注意线程安全问题
+     * 记录任务的运行信息
+     * - 需要注意线程安全问题
      * @param tag 任务的唯一标识
-     * @param runTime 任务实际执行时间（ms）
+     * @param runningInfo 任务实际执行时间（ms）
      * */
-    fun recordTaskCostTime(tag : String,runTime : Float)
+    fun recordTaskRunningInfo(tag : String, runningInfo : TaskRunningInfo)
 
     /**
      * 分发调度任务执行记录信息
