@@ -88,7 +88,7 @@ class TaskDispatcherBuilder(
 
     /**
      * 设置调度器监控记录监听
-     * @param listener 性能监控记录回调，在所有任务执行完后回调
+     * @param listener 性能监控记录回调
      * @return builder类型，便于链式调用
      * */
     @Suppress("unused")
