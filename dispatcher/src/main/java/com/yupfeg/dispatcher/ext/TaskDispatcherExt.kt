@@ -17,8 +17,8 @@ import com.yupfeg.dispatcher.task.Task
  * */
 fun startUp(
     context: Context,
-    init : (@TaskDispatcherDslMarker TaskDispatcherBuilder).()->Unit
-) : TaskDispatcher{
+    init: (@TaskDispatcherDslMarker TaskDispatcherBuilder).() -> Unit
+): TaskDispatcher {
     return TaskDispatcherBuilder(context).apply(init).build()
 }
 
@@ -31,8 +31,8 @@ fun startUp(
  * */
 fun TaskDispatcherBuilder.addTask(
     task: Task,
-    init : (@TaskDispatcherDslMarker MutableList<String>).()->Unit
-) : TaskDispatcherBuilder{
+    init: (@TaskDispatcherDslMarker MutableList<String>).() -> Unit
+): TaskDispatcherBuilder {
     task.addDependsOnList(mutableListOf<String>().apply(init))
     this.addTask(task)
     return this
@@ -47,9 +47,9 @@ fun TaskDispatcherBuilder.addTask(
  * @return [TaskDispatcherBuilder]
  * */
 fun TaskDispatcherBuilder.addAnchorTask(
-    tag : String,
-    init : (@TaskDispatcherDslMarker MutableList<String>).()->Unit
-) : TaskDispatcherBuilder{
+    tag: String,
+    init: (@TaskDispatcherDslMarker MutableList<String>).() -> Unit
+): TaskDispatcherBuilder {
     val anchorTask = anchorTask(tag, init)
     addTask(anchorTask)
     return this
@@ -66,8 +66,8 @@ fun TaskDispatcherBuilder.addAnchorTask(
  * */
 @Suppress("unused")
 fun TaskDispatcherBuilder.setOnMonitorRecordListener(
-    block : (@TaskDispatcherDslMarker DefaultMonitorRecordListener).()->Unit
-) :  TaskDispatcherBuilder{
+    block: (@TaskDispatcherDslMarker DefaultMonitorRecordListener).() -> Unit
+): TaskDispatcherBuilder {
     setOnMonitorRecordListener(DefaultMonitorRecordListener().apply(block))
     return this
 }
@@ -77,14 +77,14 @@ fun TaskDispatcherBuilder.setOnMonitorRecordListener(
 // <editor-fold desc="状态监听">
 
 /**
- * [TaskDispatcherBuilder]拓展函数，以dsl方式设置调度器性能监控记录监听
+ * [TaskDispatcherBuilder]拓展函数，以dsl方式设置调度器状态监听
  * @param init 初始化调度器状态回调监听的高阶函数
  * @return [TaskDispatcherBuilder]
  * */
 @Suppress("unused")
 fun TaskDispatcherBuilder.setOnDispatcherStateListener(
-    init : (@TaskDispatcherDslMarker DefaultDispatcherStateListener).()->Unit
-) : TaskDispatcherBuilder{
+    init: (@TaskDispatcherDslMarker DefaultDispatcherStateListener).() -> Unit
+): TaskDispatcherBuilder {
     setOnDispatcherStateListener(DefaultDispatcherStateListener().apply(init))
     return this
 }
@@ -96,8 +96,8 @@ fun TaskDispatcherBuilder.setOnDispatcherStateListener(
  * */
 @Suppress("unused")
 fun TaskDispatcherBuilder.setOnTaskStateListener(
-    init : (@TaskDispatcherDslMarker DefaultTaskStateListener).()->Unit
-) : TaskDispatcherBuilder{
+    init: (@TaskDispatcherDslMarker DefaultTaskStateListener).() -> Unit
+): TaskDispatcherBuilder {
     setOnTaskStateListener(DefaultTaskStateListener().apply(init))
     return this
 }
