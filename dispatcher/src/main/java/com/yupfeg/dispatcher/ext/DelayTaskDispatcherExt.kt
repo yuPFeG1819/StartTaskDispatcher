@@ -1,17 +1,21 @@
 package com.yupfeg.dispatcher.ext
 
 import android.content.Context
+import com.yupfeg.dispatcher.DefaultDispatcherStateListener
 import com.yupfeg.dispatcher.DelayTaskDispatcher
+import com.yupfeg.dispatcher.annotation.TaskDispatcherDslMarker
+import com.yupfeg.dispatcher.monitor.DelayTaskExecuteMonitor
 import com.yupfeg.dispatcher.task.DefaultTaskStateListener
+import com.yupfeg.dispatcher.task.MainTask
 
 /**
  * kotlin-dsl方式构建延迟启动器
  * @param context
  */
-fun buildDelayStartUp(
+fun startUpDelay(
     context: Context,
-    builder : DelayTaskDispatcher.Builder.()->Unit
-) : DelayTaskDispatcher{
+    builder: (@TaskDispatcherDslMarker DelayTaskDispatcher.Builder).() -> Unit
+): DelayTaskDispatcher {
     return DelayTaskDispatcher.Builder(context).apply(builder).builder()
 }
 
@@ -22,8 +26,14 @@ fun buildDelayStartUp(
  * @return [DelayTaskDispatcher.Builder]
  */
 @Suppress("unused")
-fun DelayTaskDispatcher.Builder.addTask(block : (Context)->Unit) : DelayTaskDispatcher.Builder{
-    addTask(delayTask { context ->  block(context) })
+fun DelayTaskDispatcher.Builder.addTask(
+    tag: String = "DelayTask",
+    block: (Context) -> Unit
+): DelayTaskDispatcher.Builder {
+    this.addTask(object : MainTask() {
+        override val tag: String = tag
+        override fun run() = block(context)
+    })
     return this
 }
 
@@ -34,9 +44,39 @@ fun DelayTaskDispatcher.Builder.addTask(block : (Context)->Unit) : DelayTaskDisp
  * */
 @Suppress("unused")
 fun DelayTaskDispatcher.Builder.setOnTaskStateListener(
-    init : DefaultTaskStateListener.()->Unit
-) : DelayTaskDispatcher.Builder{
+    init: (@TaskDispatcherDslMarker DefaultTaskStateListener).() -> Unit
+): DelayTaskDispatcher.Builder {
     val listener = DefaultTaskStateListener().apply(init)
     setOnTaskStateListener(listener)
+    return this
+}
+
+/**
+ * [DelayTaskDispatcher.Builder]拓展函数，以dsl方式设置调度器状态监听
+ * @param init 初始化调度器状态回调监听的高阶函数
+ * @return [DelayTaskDispatcher.Builder]
+ * */
+@Suppress("unused")
+fun DelayTaskDispatcher.Builder.setOnDispatcherStateListener(
+    init: (@TaskDispatcherDslMarker DefaultDispatcherStateListener).() -> Unit
+): DelayTaskDispatcher.Builder {
+    setOnDispatcherStateListener(DefaultDispatcherStateListener().apply(init))
+    return this
+}
+
+/**
+ * [DelayTaskDispatcher.Builder]拓展函数，设置调度器性能监控记录监听
+ * @param block 所有任务执行完成后回调的任务执行记录信息
+ * @return [DelayTaskDispatcher.Builder]
+ * */
+@Suppress("unused")
+fun DelayTaskDispatcher.Builder.setOnMonitorRecordListener(
+    block: (DelayTaskExecuteMonitor.TaskRecordInfo) -> Unit
+): DelayTaskDispatcher.Builder {
+    setOnMonitorRecordListener(object : DelayTaskExecuteMonitor.OnTaskRecordListener {
+        override fun onAllTaskRecordResult(timeInfo: DelayTaskExecuteMonitor.TaskRecordInfo) {
+            block(timeInfo)
+        }
+    })
     return this
 }
