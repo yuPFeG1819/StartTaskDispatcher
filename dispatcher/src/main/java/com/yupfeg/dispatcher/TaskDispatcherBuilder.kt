@@ -10,6 +10,7 @@ import com.yupfeg.dispatcher.task.Task
 import com.yupfeg.dispatcher.tools.AppProcessTools
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.properties.Delegates
 
 /**
  * 构建启动任务调度器Builder类
@@ -65,7 +66,7 @@ class TaskDispatcherBuilder(
     /**
      * 任务执行性能监控
      * */
-    internal lateinit var executeMonitor: TaskExecuteMonitor
+    internal var executeMonitor: TaskExecuteMonitor by Delegates.notNull()
         private set
 
     /**
@@ -78,6 +79,9 @@ class TaskDispatcherBuilder(
      * - 仅用于快捷添加该任务的依赖任务
      * */
     private var mCacheTask: Task? = null
+
+    /**最大主线程等待超时时间(ms)*/
+    internal var maxWaitTime : Long = 0
 
     init {
         if (!isFirstInit) {
@@ -168,6 +172,15 @@ class TaskDispatcherBuilder(
     fun setExecutorService(executorService: ExecutorService): TaskDispatcherBuilder {
         this.executorService = executorService
         return this
+    }
+
+    /**
+     * 设置最大主线程超时时间
+     * @param maxTime 最大时间（ms）
+     * */
+    @Suppress("unused")
+    fun setMaxWaitTimeout(maxTime : Long){
+        maxWaitTime = maxTime
     }
 
     /**
