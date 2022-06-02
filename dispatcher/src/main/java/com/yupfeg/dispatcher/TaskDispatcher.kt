@@ -18,14 +18,14 @@ import java.util.concurrent.atomic.AtomicInteger
  * @author yuPFeG
  * @date 2022/01/05
  */
-class TaskDispatcher internal constructor(builder: TaskDispatcherBuilder) {
+class TaskDispatcher internal constructor(builder: TaskDispatcherBuilder) : ITaskDispatcher {
 
     companion object {
         /**
-         * 最大等待时间(ms)
+         * 默认最大等待时间(ms)
          * * 主线程等待锁的超时时间
          */
-        private const val MAX_WAIT_TIME = 10 * 1000
+        private const val DEF_MAX_WAIT_TIME : Long = 10 * 1000
     }
 
     /**
@@ -63,7 +63,7 @@ class TaskDispatcher internal constructor(builder: TaskDispatcherBuilder) {
     /**
      * 启动任务执行性能监视器
      * */
-    internal val taskExecuteMonitor: TaskExecuteMonitor = builder.executeMonitor
+    private val mTaskExecuteMonitor: TaskExecuteMonitor = builder.executeMonitor
 
     /**
      * 启动任务执行状态回调监听
@@ -80,6 +80,12 @@ class TaskDispatcher internal constructor(builder: TaskDispatcherBuilder) {
      * 异步任务调度的线程池
      * */
     private val mExecutorService: ExecutorService = builder.executorService!!
+
+    /**
+     * 最大主线程等待时间（ms）
+     * */
+    private val mMaxWaitTime : Long
+        = if (builder.maxWaitTime > 0) builder.maxWaitTime else DEF_MAX_WAIT_TIME
 
     /**
      * 当前是否处于主进程
@@ -118,12 +124,12 @@ class TaskDispatcher internal constructor(builder: TaskDispatcherBuilder) {
     @Suppress("unused")
     @MainThread
     fun start() {
-        if (Looper.getMainLooper() != Looper.myLooper()) {
+        if (Looper.getMainLooper().thread != Thread.currentThread()) {
             throw RuntimeException("must be called from UiThread")
         }
         if (isRunning) return
+        mTaskExecuteMonitor.recordDispatchStartTime()
         isRunning = true
-        taskExecuteMonitor.recordDispatchStartTime()
         //执行任务开始前的Head Task
         mDispatcherStateListener?.onStartBefore()
         if (mAllTasks.isNotEmpty()) {
@@ -131,7 +137,7 @@ class TaskDispatcher internal constructor(builder: TaskDispatcherBuilder) {
             dispatchAllTasks()
         }
         //记录主线程结束等待时间
-        taskExecuteMonitor.recordMainThreadTimeCost()
+        mTaskExecuteMonitor.dispatchMainThreadTimeCost()
     }
 
     /**
@@ -162,11 +168,17 @@ class TaskDispatcher internal constructor(builder: TaskDispatcherBuilder) {
     /**
      * 调度所有待执行任务
      * */
+    @MainThread
     private fun dispatchAllTasks() {
         val enableTaskList = getEnableTaskList()
-        val mainThreadTask = mutableListOf<TaskWrapper>()
+        val mainThreadTasks = mutableListOf<TaskWrapper>()
         totalTaskSize = enableTaskList.size
-        mCountDownLatch = CountDownLatch(mNeedWaitTaskCount.get())
+        val needWaitCount = mNeedWaitTaskCount.get()
+        //记录需要主线程等待的任务数量
+        mTaskExecuteMonitor.recordWaitAsyncTaskCount(needWaitCount)
+        if (needWaitCount > 0){
+            mCountDownLatch = CountDownLatch(needWaitCount)
+        }
         for (task in enableTaskList) {
             //设置任务执行回调监听
             task.setTaskStateListener(mTaskStatusListener)
@@ -177,41 +189,33 @@ class TaskDispatcher internal constructor(builder: TaskDispatcherBuilder) {
                 continue
             }
 
-            val wrapper = TaskWrapper(task, this)
+            val wrapper = TaskWrapper(task, mTaskExecuteMonitor, this)
             if (task.isRunOnMainThread) {
                 //主线程任务
-                mainThreadTask.add(wrapper)
+                mainThreadTasks.add(wrapper)
                 continue
             }
             //调度异步任务
             val future = mExecutorService.submit(wrapper)
             mTaskFutures.add(future)
         }
-        //在调度异步执行后，再开始依次执行主线程任务，确保异步任务能够尽可能快速调度
-        for (taskWrapper in mainThreadTask) {
+        // 在调度异步执行后，再开始依次执行主线程任务，确保异步任务能够尽可能快速调度
+        // 避免主线程等待前置任务阻塞，无法调度异步任务
+        for (taskWrapper in mainThreadTasks) {
             taskWrapper.run()
         }
         //阻塞等待必须执行完毕的异步任务
-        await()
-    }
-
-    /**
-     * 主线程进入等待状态
-     * - 只在存在需要主线程等待的异步任务时才会执行
-     * */
-    @MainThread
-    private fun await() {
-        //存在需要等待的任务，主线程进入等待状态，等待所有前置任务执行完毕后才继续执行主线程
-        if (mNeedWaitTaskCount.get() <= 0) return
-        taskExecuteMonitor.recordWaitAsyncTaskCount(mNeedWaitTaskCount.get())
-        mCountDownLatch?.await(MAX_WAIT_TIME.toLong(), TimeUnit.MILLISECONDS)
+        mTaskExecuteMonitor.recordMainThreadWaitTime {
+            //存在需要等待的任务，主线程进入等待状态，等待所有前置任务执行完毕后才继续执行主线程
+            mCountDownLatch?.await(mMaxWaitTime, TimeUnit.MILLISECONDS)
+        }
     }
 
     /**
      * 标记指定任务已完成
      * @param task 已完成的任务
      */
-    fun markTaskOverDone(task: Task) {
+    override fun markTaskOverDone(task: Task) {
         notifyAllDependsWhenTaskDone(task.tag)
         if (task.isAsyncTaskNeedMainWaitOver()) {
             //如果该任务是需要主线程等待的，则主线程同步阻塞锁数量-1
@@ -240,7 +244,9 @@ class TaskDispatcher internal constructor(builder: TaskDispatcherBuilder) {
         mFinishTaskCount.getAndIncrement()
         //所有任务已完成
         if (mFinishTaskCount.get() == totalTaskSize) {
-            doOnAllTaskOver()
+            synchronized(this) {
+                doOnAllTaskOver()
+            }
         }
     }
 
@@ -248,14 +254,13 @@ class TaskDispatcher internal constructor(builder: TaskDispatcherBuilder) {
      * 所有任务执行完成时执行
      * */
     private fun doOnAllTaskOver() {
-        synchronized(this) {
-            isRunning = false
-            taskExecuteMonitor.recordAllTaskFinishTimeCost()
-            taskExecuteMonitor.dispatchExecuteRecordInfo()
-            //在所有任务执行完成后的Tail Task
-            mDispatcherStateListener?.also {
-                mHandler.post{ it.onFinish() }
-            }
+        isRunning = false
+        //记录与分发所有任务的执行性能
+        mTaskExecuteMonitor.recordAllTaskFinishTimeCost()
+        mTaskExecuteMonitor.dispatchExecuteRecordInfo()
+        //在所有任务执行完成后的Tail Task
+        mDispatcherStateListener?.also {
+            mHandler.post { it.onFinish() }
         }
     }
 
