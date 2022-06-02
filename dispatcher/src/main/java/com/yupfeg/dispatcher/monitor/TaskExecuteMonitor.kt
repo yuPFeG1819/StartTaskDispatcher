@@ -3,6 +3,8 @@ package com.yupfeg.dispatcher.monitor
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
+import androidx.annotation.MainThread
+import com.yupfeg.dispatcher.task.TaskRunningInfo
 
 /**
  * 任务调度器运行性能的监视器
@@ -11,28 +13,12 @@ import android.os.SystemClock
  */
 internal class TaskExecuteMonitor(
     private val onRecordListener: OnMonitorRecordListener? = null
-) {
-
-    companion object {
-        private const val NANO_TIME_UNIT = 1000000f
-
-        /**
-         * 测量从指定开始时间到当前时间经过的时间(ms)
-         * @param action 测量执行时间的代码块
-         * @return 执行经过时间(ms)
-         * */
-        inline fun measureTime(action: () -> Unit): Float {
-            val startTime = SystemClock.elapsedRealtimeNanos()
-            action()
-            return (SystemClock.elapsedRealtimeNanos() - startTime) / NANO_TIME_UNIT
-        }
-    }
+) : ITaskExecuteMonitor{
 
     /**
-     * 记录所有任务的消耗时间Map
-     * * 任务标识 - 消耗时间(ms)
+     * 记录所有任务的执行信息
      */
-    private val mTaskExecuteCostTimeMap = HashMap<String, Float>()
+    private val mTaskExecuteInfoList = mutableListOf<TaskRunningInfo>()
 
     /**
      * 拓扑排序任务列表消耗时间(ms)
@@ -51,12 +37,6 @@ internal class TaskExecuteMonitor(
     private var mAllMainTaskCostTime: Float = 0f
 
     /**
-     * 主线程启动消耗时间(ms)
-     * * 主线程任务时间 + 主线程等待时间
-     * */
-    private var mMainThreadCostTime: Float = 0f
-
-    /**
      * 所有启动任务完成时间(ms)
      * */
     private var mAllTaskFinishTime: Float = 0f
@@ -65,6 +45,11 @@ internal class TaskExecuteMonitor(
      * 需要主线程等待的任务数量
      * */
     private var mNeedWaitAsyncTaskCount: Int = 0
+
+    /**
+     * 主线程总计等待时间
+     * */
+    private var mMainThreadWaitTime : Float = 0f
 
     private val mHandler: Handler by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
         Handler(Looper.getMainLooper())
@@ -86,15 +71,14 @@ internal class TaskExecuteMonitor(
      * 记录任务的运行消耗时间
      * - 注意线程安全问题
      * @param tag 任务的唯一标识
-     * @param runTime 任务运行时间(ms)
-     * @param isMainThread 是否为主线程执行的任务
+     * @param runningInfo 任务运行时间(ms)
      * */
-    fun recordTaskCostTime(tag: String, runTime: Float, isMainThread: Boolean) {
+    override fun recordTaskRunningInfo(tag: String, runningInfo: TaskRunningInfo) {
         synchronized(mLock) {
-            mTaskExecuteCostTimeMap[tag] = runTime
-            if (isMainThread) {
-                //累加主线程执行任务的总时间
-                mAllMainTaskCostTime += runTime
+            mTaskExecuteInfoList.add(runningInfo)
+            if (Looper.getMainLooper().thread == Thread.currentThread()) {
+                //当前任务处于主线程，累加到主线程执行任务的总时间
+                mAllMainTaskCostTime += (runningInfo.waitTime + runningInfo.runTime)
             }
         }
     }
@@ -107,11 +91,12 @@ internal class TaskExecuteMonitor(
     }
 
     /**
-     * 记录主线程消耗时间
-     * - 也就是实际主线程的占用时间
+     * 分发记录主线程总计消耗时间（ms）
+     * - 调度器实际占用主线程的时间，任务排序+任务调度+主线程任务+主线程等待
      * */
-    fun recordMainThreadTimeCost() {
-        mMainThreadCostTime = measureTime(mStartTime)
+    @MainThread
+    fun dispatchMainThreadTimeCost() {
+        onRecordListener?.onMainThreadRecord(measureTime(mStartTime) + mSortTaskCostTime)
     }
 
     /**
@@ -129,25 +114,37 @@ internal class TaskExecuteMonitor(
     }
 
     /**
+     * 记录主线程等待时间
+     * @param action 主线程等待的执行代码块
+     * */
+    @MainThread
+    fun recordMainThreadWaitTime(action: () -> Unit){
+        val startTime = SystemClock.elapsedRealtimeNanos()
+        action()
+        mMainThreadWaitTime = measureTime(startTime)
+    }
+
+    /**
      * 测量从指定开始时间到当前时间经过的时间(ms)
      * @param start 开始时间的时间戳(nanoTime)
      * @return 执行经过时间(ms)
      * */
     private fun measureTime(start: Long): Float {
-        return (SystemClock.elapsedRealtimeNanos() - start) / NANO_TIME_UNIT
+        val endTime = SystemClock.elapsedRealtimeNanos()
+        return (endTime - start) / ITaskExecuteMonitor.NANO_TIME_UNIT
     }
 
     /**
      * 分发调度器执行记录信息
      * */
-    fun dispatchExecuteRecordInfo() {
+    override fun dispatchExecuteRecordInfo() {
         val recordInfo = ExecuteRecordInfo(
-            mainThreadCostTime = mMainThreadCostTime,
             allMainTaskCostTime = mAllMainTaskCostTime,
             allTaskCostTime = mAllTaskFinishTime,
             waitAsyncTaskCount = mNeedWaitAsyncTaskCount,
+            mainThreadWaitTime = mMainThreadWaitTime,
             sortTaskCostTime = mSortTaskCostTime,
-            allTaskCostMap = mTaskExecuteCostTimeMap
+            allTaskRunInfoList = mTaskExecuteInfoList
         )
         mHandler.post {
             onRecordListener?.onAllTaskRecordResult(recordInfo)
