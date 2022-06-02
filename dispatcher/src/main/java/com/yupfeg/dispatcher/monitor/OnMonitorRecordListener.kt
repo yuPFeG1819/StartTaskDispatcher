@@ -1,5 +1,6 @@
 package com.yupfeg.dispatcher.monitor
 
+import androidx.annotation.MainThread
 import java.lang.StringBuilder
 
 /**
@@ -22,10 +23,18 @@ interface OnMonitorRecordListener {
     fun onTaskSorted(tasksInfo: String) = Unit
 
     /**
+     * 主线程消耗时间记录回调
+     * - 包括 排序、head任务、调度异步任务、主线程任务执行、主线程等待 的时间
+     * @param costTime 调度器实际占用的主线程时间 (ms)
+     * */
+    fun onMainThreadRecord(costTime: Float)
+
+    /**
      * 在调度器执行完成后回调所有任务执行记录信息
-     * - 在所有任务完成后回调，在主线程执行
+     * - 在所有任务完成后回调，已切换在主线程执行
      * @param timeInfo 记录信息
      * */
+    @MainThread
     fun onAllTaskRecordResult(timeInfo: ExecuteRecordInfo)
 }
 
@@ -51,6 +60,12 @@ class DefaultMonitorRecordListener : OnMonitorRecordListener {
         get() = isDebug
 
     /**
+     * 主线程总计消耗时间记录(ms)
+     * - 包括 排序、head任务、调度异步任务、主线程任务执行、主线程等待 的时间
+     * */
+    var onMainThreadOverRecord: ((Float) -> Unit)? = null
+
+    /**
      * 所有任务完成后回调记录信息，在主线程运行
      */
     @JvmField
@@ -58,6 +73,10 @@ class DefaultMonitorRecordListener : OnMonitorRecordListener {
 
     override fun onTaskSorted(tasksInfo: String) {
         onTaskSorted?.invoke(tasksInfo)
+    }
+
+    override fun onMainThreadRecord(costTime: Float) {
+        onMainThreadOverRecord?.invoke(costTime)
     }
 
     override fun onAllTaskRecordResult(timeInfo: ExecuteRecordInfo) {
@@ -70,11 +89,6 @@ class DefaultMonitorRecordListener : OnMonitorRecordListener {
  * 启动任务调度器的执行性能记录类
  * */
 data class ExecuteRecordInfo(
-    /**
-     * 主线程总计消耗时间(ms)
-     * - 包括 排序、调度任务、主线程等待、主线程任务执行的时间
-     * */
-    val mainThreadCostTime: Float,
     /**所有主线程任务消耗时间(ms)*/
     val allMainTaskCostTime: Float,
     /**所有任务消耗时间(ms)*/
@@ -94,8 +108,7 @@ data class ExecuteRecordInfo(
             builder.append("task tag : ${entry.key} , cost time : ${entry.value} ms")
             totalTime += entry.value
         }
-        return "real main thread costTime : $mainThreadCostTime ms , \n" +
-                "topological sort task list cost time : $sortTaskCostTime ms , \n" +
+        return "topological sort task list cost time : $sortTaskCostTime ms , \n" +
                 "all main task cost time : $allMainTaskCostTime ms , \n" +
                 "need main thread wait task count : $waitAsyncTaskCount , \n" +
                 "real all task cost time : $allTaskCostTime ms ,\n$builder\n" +
