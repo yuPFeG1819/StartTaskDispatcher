@@ -1,8 +1,8 @@
 package com.yupfeg.dispatcher.task
 
 import android.os.Process
-import com.yupfeg.dispatcher.TaskDispatcher
-import com.yupfeg.dispatcher.monitor.TaskExecuteMonitor
+import com.yupfeg.dispatcher.ITaskDispatcher
+import com.yupfeg.dispatcher.monitor.ITaskExecuteMonitor
 
 /**
  * 抽象启动任务的包装类，实际执行的任务
@@ -11,30 +11,31 @@ import com.yupfeg.dispatcher.monitor.TaskExecuteMonitor
  */
 internal class TaskWrapper @JvmOverloads constructor(
     private val originTask: Task,
-    private val dispatcher: TaskDispatcher? = null,
+    private val taskMonitor : ITaskExecuteMonitor,
+    private val dispatcher: ITaskDispatcher? = null,
 ) : Runnable {
 
     override fun run() {
         Process.setThreadPriority(originTask.taskPriority())
-        originTask.onTaskWait(originTask.tag)
-        val waitTime = TaskExecuteMonitor.measureTime {
-            //等待前置任务完成
-            originTask.awaitDependsTask()
-        }
+        val waitTime = if (originTask.isNeedAwait()){
+            //当前任务存在前置依赖任务
+            originTask.onTaskWait(originTask.tag)
+            ITaskExecuteMonitor.measureTime {
+                //等待前置任务完成
+                try {
+                    originTask.awaitDependsTask()
+                }catch (ignore : Exception){}
+            }
+        }else 0f
         originTask.onTaskStart(originTask.tag, waitTime)
-        val runTime = TaskExecuteMonitor.measureTime {
+        val runTime = ITaskExecuteMonitor.measureTime {
             //执行当前任务
             originTask.run()
         }
         //记录任务执行时间
         recordTaskRunningInfo(waitTime, runTime)
-        dispatcher?.apply {
-            taskExecuteMonitor.recordTaskCostTime(
-                originTask.tag, runTime, originTask.isRunOnMainThread
-            )
-            //通知后续任务可以执行
-            markTaskOverDone(originTask)
-        }
+        //通知后续任务可以执行
+        dispatcher?.markTaskOverDone(originTask)
     }
 
     /**
@@ -53,6 +54,8 @@ internal class TaskWrapper @JvmOverloads constructor(
             threadName = Thread.currentThread().name
         )
         originTask.onTaskFinish(runningInfo)
+        //记录任务的执行信息
+        taskMonitor.recordTaskRunningInfo(runningInfo)
     }
 
 }
