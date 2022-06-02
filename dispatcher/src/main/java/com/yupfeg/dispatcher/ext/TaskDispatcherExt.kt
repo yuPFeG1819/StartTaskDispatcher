@@ -43,14 +43,15 @@ fun TaskDispatcherBuilder.addTask(
  * - 锚点任务本身不执行任务操作
  * - 锚点任务整合一些通用的依赖关系，后续任务只需要依赖该任务即可，避免所有任务都要写上基础依赖
  * @param tag 锚点任务标识
+ * @param isNeedMainWait 是否需要主线程等待该任务完成
  * @param init 依赖关系集合dsl函数
  * @return [TaskDispatcherBuilder]
  * */
 fun TaskDispatcherBuilder.addAnchorTask(
-    tag: String,
+    tag: String, isNeedMainWait: Boolean = true,
     init: (@TaskDispatcherDslMarker MutableList<String>).() -> Unit
 ): TaskDispatcherBuilder {
-    val anchorTask = anchorTask(tag, init)
+    val anchorTask = anchorTask(tag, isNeedMainWait, init)
     addTask(anchorTask)
     return this
 }
