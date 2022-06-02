@@ -41,7 +41,7 @@ class DelayTaskDispatcher private constructor(builder: Builder) : ITaskDispatche
         // 分批执行的好处在于每一个task占用主线程的时间相对
         // 来说很短暂，并且此时CPU是空闲的，这些能更有效地避免UI卡顿
         pollNextEnableTask()?.also { task ->
-            TaskWrapper(task, mTaskMonitor, null).run()
+            TaskWrapper(task, mTaskMonitor, this).run()
         }
         //如果所有延迟启动任务都结束，则移除该IdleHandler
         return@IdleHandler !mTaskQueue.isEmpty()
