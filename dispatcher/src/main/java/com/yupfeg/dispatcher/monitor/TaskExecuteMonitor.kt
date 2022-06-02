@@ -70,16 +70,32 @@ internal class TaskExecuteMonitor(
     /**
      * 记录任务的运行消耗时间
      * - 注意线程安全问题
-     * @param tag 任务的唯一标识
      * @param runningInfo 任务运行时间(ms)
      * */
-    override fun recordTaskRunningInfo(tag: String, runningInfo: TaskRunningInfo) {
+    override fun recordTaskRunningInfo(runningInfo: TaskRunningInfo) {
         synchronized(mLock) {
             mTaskExecuteInfoList.add(runningInfo)
             if (Looper.getMainLooper().thread == Thread.currentThread()) {
                 //当前任务处于主线程，累加到主线程执行任务的总时间
                 mAllMainTaskCostTime += (runningInfo.waitTime + runningInfo.runTime)
             }
+        }
+    }
+
+    /**
+     * 分发调度器执行记录信息
+     * */
+    override fun dispatchExecuteRecordInfo() {
+        val recordInfo = ExecuteRecordInfo(
+            allMainTaskCostTime = mAllMainTaskCostTime,
+            allTaskCostTime = mAllTaskFinishTime,
+            waitAsyncTaskCount = mNeedWaitAsyncTaskCount,
+            mainThreadWaitTime = mMainThreadWaitTime,
+            sortTaskCostTime = mSortTaskCostTime,
+            allTaskRunInfoList = mTaskExecuteInfoList
+        )
+        mHandler.post {
+            onRecordListener?.onAllTaskRecordResult(recordInfo)
         }
     }
 
@@ -132,23 +148,6 @@ internal class TaskExecuteMonitor(
     private fun measureTime(start: Long): Float {
         val endTime = SystemClock.elapsedRealtimeNanos()
         return (endTime - start) / ITaskExecuteMonitor.NANO_TIME_UNIT
-    }
-
-    /**
-     * 分发调度器执行记录信息
-     * */
-    override fun dispatchExecuteRecordInfo() {
-        val recordInfo = ExecuteRecordInfo(
-            allMainTaskCostTime = mAllMainTaskCostTime,
-            allTaskCostTime = mAllTaskFinishTime,
-            waitAsyncTaskCount = mNeedWaitAsyncTaskCount,
-            mainThreadWaitTime = mMainThreadWaitTime,
-            sortTaskCostTime = mSortTaskCostTime,
-            allTaskRunInfoList = mTaskExecuteInfoList
-        )
-        mHandler.post {
-            onRecordListener?.onAllTaskRecordResult(recordInfo)
-        }
     }
 
 }

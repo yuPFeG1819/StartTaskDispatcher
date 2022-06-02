@@ -28,10 +28,9 @@ internal interface ITaskExecuteMonitor {
     /**
      * 记录任务的运行信息
      * - 需要注意线程安全问题
-     * @param tag 任务的唯一标识
      * @param runningInfo 任务实际执行时间（ms）
      * */
-    fun recordTaskRunningInfo(tag : String, runningInfo : TaskRunningInfo)
+    fun recordTaskRunningInfo(runningInfo : TaskRunningInfo)
 
     /**
      * 分发调度任务执行记录信息

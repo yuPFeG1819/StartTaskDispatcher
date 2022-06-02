@@ -23,7 +23,7 @@ internal class DelayTaskExecuteMonitor(
      * */
     private var mAllMainTaskCostTime: Float = 0f
 
-    override fun recordTaskRunningInfo(tag: String, runningInfo : TaskRunningInfo) {
+    override fun recordTaskRunningInfo(runningInfo : TaskRunningInfo) {
         synchronized(this){
             mTaskExecuteInfoList.add(runningInfo)
             if (Looper.getMainLooper().thread == Thread.currentThread()) {
