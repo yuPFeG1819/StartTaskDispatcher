@@ -12,12 +12,13 @@ interface OnTaskStateListener {
      * 在任务进入等待前回调
      * - 可能在子线程，注意线程安全
      * - 如果任务存在前置任务，会先等待前置任务完成后再执行，这是最早的任务调度状态
+     * - 如果不存在前置任务，不会调用该方法
      * @param tag 任务唯一标识
      * */
     fun onTaskWait(tag: String)
 
     /**
-     * 任务开始前回调
+     * 在任务开始前回调
      * - 可能在子线程，注意线程安全
      * @param tag 任务唯一标识
      * @param waitTime 等待前置任务的时间(ms)
@@ -72,7 +73,7 @@ open class DefaultTaskStateListener : OnTaskStateListener{
 }
 
 /**
- * 任务允许状态信息
+ * 任务运行状态信息
  * */
 data class TaskRunningInfo(
     val tag : String,
@@ -88,8 +89,8 @@ data class TaskRunningInfo(
     val threadName : String
 ){
     override fun toString(): String {
-        return "$tag task waitTime : $waitTime ms, runTime : $runTime ms, " +
-                "isNeedMainWait : $isNeedMainWait \n" +
-                "runOn ThreadId : $threadId, ThreadName : $threadName"
+        return "task tag : $tag , waitTime : ${String.format("%.2f",waitTime)} ms ," +
+                "runTime : ${String.format("%.2f",runTime)} ms , isNeedMainWait : $isNeedMainWait , \n" +
+                "RunOn : ======>>> ThreadId : $threadId, ThreadName : $threadName"
     }
 }
