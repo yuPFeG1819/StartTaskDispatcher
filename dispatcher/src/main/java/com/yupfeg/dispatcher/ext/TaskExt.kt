@@ -19,20 +19,6 @@ fun mainTask(tag : String,block : (Context)->Unit) : Task{
 }
 
 /**
- * 快捷构建主线程延迟任务
- * - 便捷方法，通常延迟任务是在视图界面内使用，简化手动实现的繁琐
- * @param tag 任务标识，通常延迟任务只会添加到`DelayTaskDispatcher`使用，直接使用默认值即可；
- * 如果需要添加到`TaskDispatcher`内进行并发任务调度时，需要设置唯一标识
- * @param block 任务执行内容，提供ApplicationContext作为函数参数
- * */
-fun delayTask(tag: String = "DelayTask",block: (Context) -> Unit) : Task{
-    return object : MainTask(){
-        override val tag: String = tag
-        override fun run() = block(context)
-    }
-}
-
-/**
  * 快捷创建异步任务
  * - 仅为便捷方法，推荐在任务模块内实现任务类，更便于解耦使用
  * @param tag 任务唯一标识
