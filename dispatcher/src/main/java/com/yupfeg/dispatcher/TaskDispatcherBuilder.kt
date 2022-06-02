@@ -179,8 +179,9 @@ class TaskDispatcherBuilder(
      * @param maxTime 最大时间（ms）
      * */
     @Suppress("unused")
-    fun setMaxWaitTimeout(maxTime : Long){
+    fun setMaxWaitTimeout(maxTime : Long) : TaskDispatcherBuilder{
         maxWaitTime = maxTime
+        return this
     }
 
     /**
