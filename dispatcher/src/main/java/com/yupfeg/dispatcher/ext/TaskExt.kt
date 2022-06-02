@@ -56,6 +56,7 @@ fun needWaitOverAsyncTask(tag: String,block: (Context) -> Unit) : Task{
  * 创建锚点任务
  * - 可利用该任务整合一些通用的依赖关系，后续任务只需要依赖该任务即可，避免所有任务都要写上基础依赖
  * @param tag 任务的唯一标识
+ * @param isNeedMainWait 是否需要主线程等待该任务完成
  * @param init dsl方式初始化任务，以可变集合作为函数类型接收者
  * */
 fun anchorTask(
