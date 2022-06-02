@@ -33,7 +33,6 @@ data class DelayTaskRecordInfo(
             totalTime += (entry.runTime)
         }
         return "all delay task cost time : ${String.format("%.2f",allTaskCostTime)} ms ,\n" +
-                "$builder\n" +
-                "serial execute delay task cost time : $totalTime ms"
+                "$builder\n"
     }
 }
