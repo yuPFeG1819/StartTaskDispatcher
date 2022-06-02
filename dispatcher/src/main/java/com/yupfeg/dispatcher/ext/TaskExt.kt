@@ -1,6 +1,7 @@
 package com.yupfeg.dispatcher.ext
 
 import android.content.Context
+import com.yupfeg.dispatcher.annotation.TaskDispatcherDslMarker
 import com.yupfeg.dispatcher.task.MainTask
 import com.yupfeg.dispatcher.task.Task
 
@@ -57,22 +58,29 @@ fun needWaitOverAsyncTask(tag: String,block: (Context) -> Unit) : Task{
  * @param tag 任务的唯一标识
  * @param init dsl方式初始化任务，以可变集合作为函数类型接收者
  * */
-fun anchorTask(tag: String,init : MutableList<String>.()->Unit) : Task{
-    return anchorTask(tag, dependsOnList = mutableListOf<String>().apply(init))
+fun anchorTask(
+    tag: String,isNeedMainWait : Boolean = true,
+    init : (@TaskDispatcherDslMarker MutableList<String>).()->Unit
+) : Task{
+    return anchorTask(tag, isNeedMainWait,dependsOnList = mutableListOf<String>().apply(init))
 }
 
 /**
  * 创建锚点任务
  * - 可利用该任务整合一些通用的依赖关系，后续任务只需要依赖该任务即可，避免所有任务都要写上基础依赖
  * @param tag 任务标识
+ * @param isNeedMainWait 是否需要主线程等待
  * @param dependsOnList 依赖的前置任务标识集合
  * */
-fun anchorTask(tag: String,dependsOnList : List<String>) : Task{
+fun anchorTask(tag: String,isNeedMainWait : Boolean,dependsOnList : List<String>) : Task{
     return object : Task(){
 
         init {
             addDependsOnList(dependsOnList)
         }
+
+        override val isNeedWaitTaskOver: Boolean
+            get() = isNeedMainWait
 
         override val tag: String = tag
         override fun run() = Unit
