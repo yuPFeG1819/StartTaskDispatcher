@@ -1,7 +1,7 @@
 package com.yupfeg.sampledispatcher.task
 
 import com.yupfeg.dispatcher.task.MainTask
-import com.yupfeg.logger.ext.logd
+import com.yupfeg.logger.ext.loggd
 
 /**
  * 模拟主线程延迟任务
@@ -18,7 +18,7 @@ class DelayMainInitTask : MainTask() {
         get() = TAG
 
     override fun run() {
-        logd("DelayMainInitTask run")
+        loggd("DelayMainInitTask run")
         Thread.sleep(50)
     }
 }

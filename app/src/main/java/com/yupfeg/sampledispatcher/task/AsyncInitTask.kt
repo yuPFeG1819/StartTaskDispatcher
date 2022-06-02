@@ -1,7 +1,7 @@
 package com.yupfeg.sampledispatcher.task
 
 import com.yupfeg.dispatcher.task.Task
-import com.yupfeg.logger.ext.logd
+import com.yupfeg.logger.ext.loggd
 
 /**
  * 模拟异步初始化任务
@@ -23,8 +23,8 @@ class AsyncInitTask : Task(){
         get() = TAG
 
     override fun run() {
-        logd("AsyncInitTask run")
-        Thread.sleep(100)
+        loggd("AsyncInitTask run")
+        Thread.sleep(50)
     }
 
 }

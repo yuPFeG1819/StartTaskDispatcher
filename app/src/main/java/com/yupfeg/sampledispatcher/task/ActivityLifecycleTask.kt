@@ -2,7 +2,7 @@ package com.yupfeg.sampledispatcher.task
 
 import android.app.Application
 import com.yupfeg.dispatcher.task.MainTask
-import com.yupfeg.logger.ext.logd
+import com.yupfeg.logger.ext.loggd
 
 /**
  * 监听Activity生命周期的任务
@@ -19,6 +19,6 @@ class ActivityLifecycleTask(private val application: Application) : MainTask(){
         get() = TAG
 
     override fun run() {
-        logd("init ActivityLifecycleTask")
+        loggd("init ActivityLifecycleTask")
     }
 }

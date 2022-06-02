@@ -2,7 +2,7 @@ package com.yupfeg.sampledispatcher.task
 
 import android.app.Application
 import com.yupfeg.dispatcher.task.Task
-import com.yupfeg.logger.ext.logd
+import com.yupfeg.logger.ext.loggd
 
 /**
  * 模拟初始化Toast框架
@@ -22,6 +22,6 @@ class InitToastTask(private val application: Application) : Task(){
         get() = true
 
     override fun run() {
-        logd("init InitToastTask run")
+        loggd("init InitToastTask run")
     }
 }

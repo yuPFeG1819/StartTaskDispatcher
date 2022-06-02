@@ -1,7 +1,7 @@
 package com.yupfeg.sampledispatcher.task
 
 import com.yupfeg.dispatcher.task.Task
-import com.yupfeg.logger.ext.logd
+import com.yupfeg.logger.ext.loggd
 
 
 /**
@@ -15,13 +15,17 @@ class InitUMTask : Task(){
     }
 
     override val isEnable: Boolean
-        get() = false
+        get() = true
 
     override val tag: String
         get() = TAG
 
+    override val isNeedWaitTaskOver: Boolean
+        get() = true
+
     override fun run() {
-        logd("initUmengTask run")
-        Thread.sleep(400)
+        if (!isEnable) return
+        loggd("initUmengTask run")
+        Thread.sleep(500)
     }
 }

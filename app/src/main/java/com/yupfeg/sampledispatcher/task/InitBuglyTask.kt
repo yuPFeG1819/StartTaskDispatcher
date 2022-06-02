@@ -1,7 +1,7 @@
 package com.yupfeg.sampledispatcher.task
 
 import com.yupfeg.dispatcher.task.Task
-import com.yupfeg.logger.ext.logd
+import com.yupfeg.logger.ext.loggd
 
 /**
  * 模拟初始化Bulgy任务
@@ -25,7 +25,8 @@ class InitBuglyTask : Task(){
         get() = true
 
     override fun run() {
-        logd("InitBuglyTask run")
-        Thread.sleep(100)
+        if (!isEnable) return
+        loggd("InitBuglyTask run")
+        Thread.sleep(300)
     }
 }

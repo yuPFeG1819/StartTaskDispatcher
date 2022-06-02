@@ -1,7 +1,7 @@
 package com.yupfeg.sampledispatcher.task
 
 import com.yupfeg.dispatcher.task.Task
-import com.yupfeg.logger.ext.logd
+import com.yupfeg.logger.ext.loggd
 
 /**
  * 模拟初始化分享组件的任务
@@ -17,8 +17,11 @@ class InitSharedTask : Task() {
     override val tag: String
         get() = TAG
 
+    override val isNeedWaitTaskOver: Boolean
+        get() = false
+
     override fun run() {
-        logd("InitSharedTask run")
-        Thread.sleep(100)
+        loggd("InitSharedTask run")
+        Thread.sleep(80)
     }
 }

@@ -1,7 +1,7 @@
 package com.yupfeg.sampledispatcher.task
 
 import com.yupfeg.dispatcher.task.MainTask
-import com.yupfeg.logger.ext.logd
+import com.yupfeg.logger.ext.loggd
 
 /**
  * 未捕获异常监听的初始化任务
@@ -20,6 +20,7 @@ class UncaughtCrashTask : MainTask() {
         get() = true
 
     override fun run() {
-        logd("init UncaughtCrash Task")
+        loggd("init UncaughtCrash Task")
+        Thread.sleep(20)
     }
 }
