@@ -10,7 +10,7 @@ import com.yupfeg.dispatcher.ext.*
 import com.yupfeg.dispatcher.monitor.ExecuteRecordInfo
 import com.yupfeg.dispatcher.monitor.OnMonitorRecordListener
 import com.yupfeg.dispatcher.task.MainTask
-import com.yupfeg.dispatcher.task.OnTaskStateListener
+import com.yupfeg.dispatcher.task.OnTaskStatusListener
 import com.yupfeg.dispatcher.task.TaskRunningInfo
 import com.yupfeg.executor.ExecutorProvider
 import com.yupfeg.executor.ext.buildDefCPUThreadPoolFactory
@@ -110,12 +110,12 @@ class App : Application() {
             setOnDispatcherStateListener {
                 onStartBefore = {
                     //Head Task
-                    loggd("启动任务调度器开始执行调度")
+                    loggd("启动任务调度器开始执行调度 Head Task")
                 }
 
                 onFinish = {
                     //Tail Task
-                    loggd("启动任务调度器执行完成")
+                    loggd("启动任务调度器执行完成 Tail Task")
                 }
             }
 
@@ -140,13 +140,12 @@ class App : Application() {
                 onWait = { tag ->
                     loggi("$tag 任务开始等待")
                 }
-
-//                onStart = { tag, waitTime ->
-//                    loggi("$tag 任务开始执行 , 已等待前置任务 $waitTime ms")
-//                }
-//                onFinished = { runningInfo ->
-//                    loggi("任务已执行完成 : $runningInfo")
-//                }
+                onStart = { tag, waitTime ->
+                    loggi("$tag 任务开始执行 , 已等待前置任务 $waitTime ms")
+                }
+                onFinished = { runningInfo ->
+                    loggi("任务已执行完成 : $runningInfo")
+                }
             }
         }
     }
@@ -158,6 +157,7 @@ class App : Application() {
     @Suppress("unused")
     fun normalInitDispatcher(): TaskDispatcher {
         initExecutor()
+        initLogger()
 
         val dispatcherBuilder = TaskDispatcherBuilder(this)
             //设置调度线程池
@@ -201,7 +201,7 @@ class App : Application() {
                 Log.i("logger", "启动任务排序结果 :\n$tasksInfo")
             }
 
-            override fun onMainThreadRecord(costTime: Float) {
+            override fun onMainThreadCostRecord(costTime: Float) {
                 loggi("调度器主线程耗时：${costTime}")
             }
 
@@ -213,7 +213,6 @@ class App : Application() {
             .setOnDispatcherStateListener(object : OnDispatcherStateListener {
                 override fun onStartBefore() {
                     //Head Task
-                    initLogger()
                     loggd("启动任务调度器开始执行调度")
                 }
 
@@ -221,7 +220,7 @@ class App : Application() {
                     loggd("启动任务调度器执行完成")
                 }
             })
-            .setOnTaskStateListener(object : OnTaskStateListener {
+            .setOnTaskStateListener(object : OnTaskStatusListener {
                 override fun onTaskWait(tag: String) {
                     loggi("$tag 任务开始等待")
                 }
