@@ -10,6 +10,11 @@ import com.yupfeg.dispatcher.task.Task
 interface ITaskDispatcher {
 
     /**
+     * 是否支持等待前置依赖任务
+     * */
+    val isSupportAwaitDepends : Boolean
+
+    /**
      * 标记指定任务已完成
      * @param task 已完成的任务
      * */
