@@ -1,12 +1,15 @@
 package com.yupfeg.sampledispatcher
 
 import android.os.Bundle
+import android.os.Looper
+import android.os.MessageQueue
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import com.yupfeg.dispatcher.DelayTaskDispatcher
 import com.yupfeg.dispatcher.ext.*
 import com.yupfeg.logger.ext.loggd
-import com.yupfeg.sampledispatcher.task.InitBDMapTask
+import com.yupfeg.logger.ext.loggi
+import java.util.*
 
 class MainActivity : AppCompatActivity() {
 
@@ -14,27 +17,57 @@ class MainActivity : AppCompatActivity() {
         createDelayDispatcher()
     }
 
+    private var addTaskNum : Int = 1
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+//        Looper.myLooper()?.setMessageLogging {
+//            loggi("looper的消息取出内容：${it}")
+//        }
+        findViewById<View>(R.id.btn_add_new_task).setOnClickListener {
+            addTaskNum++
+            mDispatcher.addTask(this,mainTask("delay_new_${addTaskNum}"){
+                loggd("新延迟任务${addTaskNum} run")
+            })
+        }
         findViewById<View>(R.id.btn_test_delay_task).setOnClickListener {
             mDispatcher.start()
+        }
+
+        findViewById<View>(R.id.btn_test_delay_task_normal).setOnClickListener {
+            Looper.myQueue().addIdleHandler(createNormalIdleHandlerMsgList())
+        }
+    }
+
+    private fun createNormalIdleHandlerMsgList() : MessageQueue.IdleHandler{
+        val taskQueue = ArrayDeque<Runnable>()
+        for (i in 0..10){
+            taskQueue.offer(Runnable {
+                loggd("normal idle handle run task $i")
+            })
+        }
+        return MessageQueue.IdleHandler {
+            var newTask: Runnable? = null
+            while (taskQueue.isNotEmpty()) {
+                val task = taskQueue.poll()
+                task ?: continue
+                newTask = task
+                break
+            }
+            loggi("logger", "延迟任务：idleHandler - ，剩余任务数量：${taskQueue.size}")
+            newTask?.run()
+            return@IdleHandler !taskQueue.isEmpty()
         }
     }
 
     private fun createDelayDispatcher() : DelayTaskDispatcher{
         return startUpDelay(this){
-            addTask(InitBDMapTask())
-            addTask("delay1") {
-                loggd("延迟任务1 run")
+            for (i in 0..10){
+                addTask("delay${i}") {
+                    loggd("延迟任务${i} run")
+                }
             }
-            addTask("delay2"){
-                loggd("延迟任务2 run")
-            }
-            addTask("delay3") {
-                loggd("延迟任务3 run")
-            }
-
             setOnTaskStateListener{
                 onStart = {tag, _ ->
                     loggd("$tag 任务开启")
