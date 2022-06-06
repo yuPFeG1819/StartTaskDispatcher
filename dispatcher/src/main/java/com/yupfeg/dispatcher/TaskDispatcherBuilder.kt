@@ -5,7 +5,7 @@ import androidx.annotation.MainThread
 import com.yupfeg.dispatcher.monitor.OnMonitorRecordListener
 import com.yupfeg.dispatcher.monitor.TaskExecuteMonitor
 import com.yupfeg.dispatcher.tools.TaskSortTools
-import com.yupfeg.dispatcher.task.OnTaskStateListener
+import com.yupfeg.dispatcher.task.OnTaskStatusListener
 import com.yupfeg.dispatcher.task.Task
 import com.yupfeg.dispatcher.tools.AppProcessTools
 import java.util.concurrent.ExecutorService
@@ -51,7 +51,7 @@ class TaskDispatcherBuilder(
     /**
      * 单个任务执行状态回调监听
      * */
-    internal var taskStatusListener: OnTaskStateListener? = null
+    internal var taskStatusListener: OnTaskStatusListener? = null
 
     /**
      * 性能监控回调监听
@@ -120,7 +120,7 @@ class TaskDispatcherBuilder(
      * @return builder类型，便于链式调用
      */
     @Suppress("unused")
-    fun setOnTaskStateListener(listener: OnTaskStateListener): TaskDispatcherBuilder {
+    fun setOnTaskStateListener(listener: OnTaskStatusListener): TaskDispatcherBuilder {
         this.taskStatusListener = listener
         return this
     }
