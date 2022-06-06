@@ -6,7 +6,7 @@ import com.yupfeg.dispatcher.DelayTaskDispatcher
 import com.yupfeg.dispatcher.annotation.TaskDispatcherDslMarker
 import com.yupfeg.dispatcher.monitor.delay.DelayTaskRecordInfo
 import com.yupfeg.dispatcher.monitor.delay.OnDelayTaskRecordListener
-import com.yupfeg.dispatcher.task.DefaultTaskStateListener
+import com.yupfeg.dispatcher.task.DefaultTaskStatusListener
 import com.yupfeg.dispatcher.task.MainTask
 
 /**
@@ -45,9 +45,9 @@ fun DelayTaskDispatcher.Builder.addTask(
  * */
 @Suppress("unused")
 fun DelayTaskDispatcher.Builder.setOnTaskStateListener(
-    init: (@TaskDispatcherDslMarker DefaultTaskStateListener).() -> Unit
+    init: (@TaskDispatcherDslMarker DefaultTaskStatusListener).() -> Unit
 ): DelayTaskDispatcher.Builder {
-    val listener = DefaultTaskStateListener().apply(init)
+    val listener = DefaultTaskStatusListener().apply(init)
     setOnTaskStateListener(listener)
     return this
 }

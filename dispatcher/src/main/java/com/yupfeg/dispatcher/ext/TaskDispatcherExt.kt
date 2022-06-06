@@ -6,7 +6,7 @@ import com.yupfeg.dispatcher.TaskDispatcher
 import com.yupfeg.dispatcher.TaskDispatcherBuilder
 import com.yupfeg.dispatcher.annotation.TaskDispatcherDslMarker
 import com.yupfeg.dispatcher.monitor.DefaultMonitorRecordListener
-import com.yupfeg.dispatcher.task.DefaultTaskStateListener
+import com.yupfeg.dispatcher.task.DefaultTaskStatusListener
 import com.yupfeg.dispatcher.task.Task
 
 
@@ -97,9 +97,9 @@ fun TaskDispatcherBuilder.setOnDispatcherStateListener(
  * */
 @Suppress("unused")
 fun TaskDispatcherBuilder.setOnTaskStateListener(
-    init: (@TaskDispatcherDslMarker DefaultTaskStateListener).() -> Unit
+    init: (@TaskDispatcherDslMarker DefaultTaskStatusListener).() -> Unit
 ): TaskDispatcherBuilder {
-    setOnTaskStateListener(DefaultTaskStateListener().apply(init))
+    setOnTaskStateListener(DefaultTaskStatusListener().apply(init))
     return this
 }
 
