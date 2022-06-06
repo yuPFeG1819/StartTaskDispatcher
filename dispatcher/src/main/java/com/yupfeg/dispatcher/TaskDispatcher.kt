@@ -4,7 +4,7 @@ import android.os.Handler
 import android.os.Looper
 import androidx.annotation.MainThread
 import com.yupfeg.dispatcher.monitor.TaskExecuteMonitor
-import com.yupfeg.dispatcher.task.OnTaskStateListener
+import com.yupfeg.dispatcher.task.OnTaskStatusListener
 import com.yupfeg.dispatcher.task.Task
 import com.yupfeg.dispatcher.task.TaskWrapper
 import java.util.concurrent.CountDownLatch
@@ -68,7 +68,7 @@ class TaskDispatcher internal constructor(builder: TaskDispatcherBuilder) : ITas
     /**
      * 启动任务执行状态回调监听
      * */
-    private val mTaskStatusListener: OnTaskStateListener? = builder.taskStatusListener
+    private val mTaskStatusListener: OnTaskStatusListener? = builder.taskStatusListener
 
     /**
      * 任务调度器的执行状态监听
@@ -102,6 +102,12 @@ class TaskDispatcher internal constructor(builder: TaskDispatcherBuilder) : ITas
     private val mHandler: Handler by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
         Handler(Looper.getMainLooper())
     }
+
+    /**
+     * 支持等待前置依赖任务
+     * */
+    override val isSupportAwaitDepends: Boolean
+        get() = true
 
     /**
      * 总计需要执行的任务数
