@@ -28,7 +28,7 @@ interface OnMonitorRecordListener {
      * - 包括 排序、head任务、调度异步任务、主线程任务执行、主线程等待 的时间
      * @param costTime 调度器实际占用的主线程时间 (ms)
      * */
-    fun onMainThreadRecord(costTime: Float)
+    fun onMainThreadCostRecord(costTime: Float)
 
     /**
      * 在调度器执行完成后回调所有任务执行记录信息
@@ -77,7 +77,7 @@ class DefaultMonitorRecordListener : OnMonitorRecordListener {
         onTaskSorted?.invoke(tasksInfo)
     }
 
-    override fun onMainThreadRecord(costTime: Float) {
+    override fun onMainThreadCostRecord(costTime: Float) {
         onMainThreadOverRecord?.invoke(costTime)
     }
 

@@ -112,7 +112,7 @@ internal class TaskExecuteMonitor(
      * */
     @MainThread
     fun dispatchMainThreadTimeCost() {
-        onRecordListener?.onMainThreadRecord(measureTime(mStartTime) + mSortTaskCostTime)
+        onRecordListener?.onMainThreadCostRecord(measureTime(mStartTime) + mSortTaskCostTime)
     }
 
     /**
