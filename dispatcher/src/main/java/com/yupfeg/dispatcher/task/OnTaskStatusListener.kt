@@ -7,7 +7,7 @@ package com.yupfeg.dispatcher.task
  * @author yuPFeG
  * @date 2022/01/07
  */
-interface OnTaskStateListener {
+interface OnTaskStatusListener {
     /**
      * 在任务进入等待前回调
      * - 可能在子线程，注意线程安全
@@ -36,7 +36,7 @@ interface OnTaskStateListener {
 /**
  * 默认实现的启动任务状态监听
  */
-open class DefaultTaskStateListener : OnTaskStateListener{
+open class DefaultTaskStatusListener : OnTaskStatusListener{
 
     /**
      * 任务开始等待前回调，返回任务标识

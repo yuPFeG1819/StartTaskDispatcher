@@ -12,7 +12,7 @@ import java.util.concurrent.TimeUnit
  * @author yuPFeG
  * @date 2022/01/04
  */
-abstract class Task : ITask, OnTaskStateListener {
+abstract class Task : ITask, OnTaskStatusListener {
 
     companion object {
         /**最大等待前置任务时间(s)*/
@@ -57,15 +57,9 @@ abstract class Task : ITask, OnTaskStateListener {
     private var mContext: Context? = null
 
     /**
-     * 是否监控任务执行
-     * */
-    internal val isMonitorTaskOver: Boolean
-        get() = mStatusListener != null
-
-    /**
      * 任务执行状态回调
      * */
-    private var mStatusListener: OnTaskStateListener? = null
+    private var mStatusListener: OnTaskStatusListener? = null
 
     // <editor-fold desc="抽象任务接口实现">
 
@@ -198,7 +192,7 @@ abstract class Task : ITask, OnTaskStateListener {
      * - 只允许由调度器统一配置
      * @param listener
      * */
-    internal fun setTaskStateListener(listener: OnTaskStateListener?) {
+    internal fun setTaskStateListener(listener: OnTaskStatusListener?) {
         mStatusListener = listener
     }
 
