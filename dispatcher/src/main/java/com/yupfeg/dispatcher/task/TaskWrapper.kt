@@ -9,16 +9,16 @@ import com.yupfeg.dispatcher.monitor.ITaskExecuteMonitor
  * @author yuPFeG
  * @date 2022/01/05
  */
-internal class TaskWrapper @JvmOverloads constructor(
+internal class TaskWrapper constructor(
     private val originTask: Task,
     private val taskMonitor : ITaskExecuteMonitor,
-    private val dispatcher: ITaskDispatcher? = null,
+    private val dispatcher: ITaskDispatcher,
 ) : Runnable {
 
     override fun run() {
         Process.setThreadPriority(originTask.taskPriority())
-        val waitTime = if (originTask.isNeedAwait()){
-            //当前任务存在前置依赖任务
+        val waitTime = if (originTask.isNeedAwait() && dispatcher.isSupportAwaitDepends){
+            //当前任务存在前置依赖任务，且调度器支持等待前置依赖任务
             originTask.onTaskWait(originTask.tag)
             ITaskExecuteMonitor.measureTime {
                 //等待前置任务完成
@@ -27,6 +27,7 @@ internal class TaskWrapper @JvmOverloads constructor(
                 }catch (ignore : Exception){}
             }
         }else 0f
+        //任务开始执行前
         originTask.onTaskStart(originTask.tag, waitTime)
         val runTime = ITaskExecuteMonitor.measureTime {
             //执行当前任务
@@ -35,7 +36,7 @@ internal class TaskWrapper @JvmOverloads constructor(
         //记录任务执行时间
         recordTaskRunningInfo(waitTime, runTime)
         //通知后续任务可以执行
-        dispatcher?.markTaskOverDone(originTask)
+        dispatcher.markTaskOverDone(originTask)
     }
 
     /**
@@ -44,15 +45,16 @@ internal class TaskWrapper @JvmOverloads constructor(
      * @param runTime 任务实际执行时间
      * */
     private fun recordTaskRunningInfo(waitTime: Float, runTime: Float) {
-        if (!originTask.isMonitorTaskOver) return
+        val isNeedAwait = originTask.isAsyncTaskNeedMainWaitOver() && dispatcher.isSupportAwaitDepends
         val runningInfo = TaskRunningInfo(
             tag = originTask.tag,
             waitTime = waitTime,
             runTime = runTime,
-            isNeedMainWait = originTask.isAsyncTaskNeedMainWaitOver(),
+            isNeedMainWait = isNeedAwait ,
             threadId = Thread.currentThread().id,
             threadName = Thread.currentThread().name
         )
+        //记录任务执行状态结束
         originTask.onTaskFinish(runningInfo)
         //记录任务的执行信息
         taskMonitor.recordTaskRunningInfo(runningInfo)
