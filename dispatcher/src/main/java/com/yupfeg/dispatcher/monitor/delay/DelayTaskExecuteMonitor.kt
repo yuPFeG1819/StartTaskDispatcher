@@ -45,4 +45,12 @@ internal class DelayTaskExecuteMonitor(
         )
     }
 
+    /**
+     * 重置任务执行记录信息
+     * */
+    internal fun resetTaskExecuteRecord(){
+        mAllMainTaskCostTime = 0f
+        mTaskExecuteInfoList.clear()
+    }
+
 }
