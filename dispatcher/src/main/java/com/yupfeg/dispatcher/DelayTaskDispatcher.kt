@@ -6,7 +6,7 @@ import android.os.MessageQueue
 import androidx.annotation.MainThread
 import com.yupfeg.dispatcher.monitor.delay.DelayTaskExecuteMonitor
 import com.yupfeg.dispatcher.monitor.delay.OnDelayTaskRecordListener
-import com.yupfeg.dispatcher.task.OnTaskStateListener
+import com.yupfeg.dispatcher.task.OnTaskStatusListener
 import com.yupfeg.dispatcher.task.Task
 import com.yupfeg.dispatcher.task.TaskWrapper
 import java.util.*
@@ -14,7 +14,8 @@ import kotlin.properties.Delegates
 
 /**
  * 延迟任务调度器
- * * 仅在主线程执行任务
+ * * 通常仅在主线程的cpu空闲时间分批执行任务，如需在其他线程启动，则需要在其他调用`Looper.loop`开启消息队列循环
+ * * 按任务队列的添加顺序倒序执行，最后提交的任务后执行
  * * 注意，使用该调度器会忽略所有任务的前置任务，如有并发需求可以使用[TaskDispatcher]进行并发任务调度
  * @author yuPFeG
  * @date 2021/12/11
@@ -22,9 +23,9 @@ import kotlin.properties.Delegates
 @Suppress("unused")
 class DelayTaskDispatcher private constructor(builder: Builder) : ITaskDispatcher {
 
-    private var mTaskQueue: Queue<Task> = builder.taskQueue
+    private val mTaskQueue: Deque<Task> = builder.taskQueue
 
-    private var mTaskMonitor: DelayTaskExecuteMonitor = builder.taskMonitor
+    private val mTaskMonitor: DelayTaskExecuteMonitor = builder.taskMonitor
 
     /**
      * 任务调度器的执行状态监听
@@ -32,10 +33,19 @@ class DelayTaskDispatcher private constructor(builder: Builder) : ITaskDispatche
     private val mDispatcherStateListener: OnDispatcherStateListener? =
         builder.onDispatcherStatusListener
 
+    /**每个任务执行状态监听*/
+    private var mTaskExecuteListener: OnTaskStatusListener? = builder.taskExecuteListener
+
     /**是否处于正在运行状态*/
     @Suppress("MemberVisibilityCanBePrivate")
     var isRunning: Boolean = false
         private set
+
+    /**
+     * 是否支持等待前置依赖任务
+     * */
+    override val isSupportAwaitDepends: Boolean
+        get() = false
 
     private val mIdleHandler = MessageQueue.IdleHandler {
         // 分批执行的好处在于每一个task占用主线程的时间相对
@@ -43,8 +53,10 @@ class DelayTaskDispatcher private constructor(builder: Builder) : ITaskDispatche
         pollNextEnableTask()?.also { task ->
             TaskWrapper(task, mTaskMonitor, this).run()
         }
+        val isTaskOver = mTaskQueue.isEmpty()
+        if (isTaskOver) isRunning = false
         //如果所有延迟启动任务都结束，则移除该IdleHandler
-        return@IdleHandler !mTaskQueue.isEmpty()
+        return@IdleHandler !isTaskOver
     }
 
     /**
@@ -53,11 +65,25 @@ class DelayTaskDispatcher private constructor(builder: Builder) : ITaskDispatche
     private fun pollNextEnableTask(): Task? {
         while (mTaskQueue.isNotEmpty()) {
             val newTask = mTaskQueue.poll()
-            newTask ?: return null
+            newTask ?: continue
             if (!newTask.isEnable) continue
             return newTask
         }
         return null
+    }
+
+    /**
+     * 添加额外的延迟任务
+     * - 所有任务执行时间尽可能控制在100ms以内，否则会导致后续任务的执行时机异常，只能在放置于后台任务后才执行
+     * - 如果调度器已结束或未开启，则需要重新调用[start]方法重新启动调度器，才会执行新添加的任务
+     * @param context
+     * @param task 需要添加执行的额外任务，注意任务耗时情况
+     * @return true-表示成功添加任务
+     * */
+    fun addTask(context: Context, task: Task): Boolean {
+        task.setContext(context)
+        task.setTaskStateListener(mTaskExecuteListener)
+        return mTaskQueue.offer(task)
     }
 
     /**
@@ -66,13 +92,15 @@ class DelayTaskDispatcher private constructor(builder: Builder) : ITaskDispatche
      * */
     fun start() {
         if (Looper.myLooper()?.thread != Thread.currentThread()) {
-            throw RuntimeException("must be called from looper thread")
+            throw RuntimeException("must be called from looper thread , " +
+                    "or use looper.loop start message queue")
         }
 
         if (isRunning) return
         isRunning = true
         //执行任务开始前的Head Task
         mDispatcherStateListener?.onStartBefore()
+        mTaskMonitor.resetTaskExecuteRecord()
         Looper.myQueue().addIdleHandler(mIdleHandler)
     }
 
@@ -107,10 +135,10 @@ class DelayTaskDispatcher private constructor(builder: Builder) : ITaskDispatche
      * */
     class Builder(private val context: Context) {
 
-        internal val taskQueue: Queue<Task> = LinkedList()
+        internal val taskQueue: Deque<Task> = ArrayDeque()
 
         /**每个任务执行状态监听*/
-        private var mTaskExecuteListener: OnTaskStateListener? = null
+        internal var taskExecuteListener: OnTaskStatusListener? = null
 
         /**任务执行性能监控器*/
         internal var taskMonitor: DelayTaskExecuteMonitor by Delegates.notNull()
@@ -128,8 +156,8 @@ class DelayTaskDispatcher private constructor(builder: Builder) : ITaskDispatche
          * @param listener
          * @return 延迟任务调度器本身，便于链式调用
          * */
-        fun setOnTaskStateListener(listener: OnTaskStateListener): Builder {
-            mTaskExecuteListener = listener
+        fun setOnTaskStateListener(listener: OnTaskStatusListener): Builder {
+            taskExecuteListener = listener
             return this
         }
 
@@ -159,7 +187,9 @@ class DelayTaskDispatcher private constructor(builder: Builder) : ITaskDispatche
 
         /**
          * 添加延迟任务
-         * @param task
+         * - 注意避免执行耗时任务
+         * - 所有任务执行时间内，尽可能控制在100ms以内，否则会导致后续任务的执行时机异常，只能在放置于后台任务后才执行
+         * @param task cpu空闲时间加载的任务
          * @return 延迟任务调度器本身，便于链式调用
          * */
         fun addTask(task: Task): Builder {
@@ -174,7 +204,7 @@ class DelayTaskDispatcher private constructor(builder: Builder) : ITaskDispatche
         @MainThread
         fun builder(): DelayTaskDispatcher {
             for (task in taskQueue) {
-                task.setTaskStateListener(mTaskExecuteListener)
+                task.setTaskStateListener(taskExecuteListener)
             }
             taskMonitor = DelayTaskExecuteMonitor(mMonitorRecordListener)
             return DelayTaskDispatcher(this)
